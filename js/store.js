@@ -210,19 +210,24 @@ const Store = {
       const game = this._cache.games.find(g => g.id === o.gameId);
       const pkg = this._cache.packages.find(p => p.id === o.pkgId);
       
-      // Find supplier name by cost matching (fallback if not found)
+      // Find supplier details by cost matching
       let supplierName = 'Unknown';
+      let supplierLink = '';
       if (pkg && pkg.suppliers) {
         const s = pkg.suppliers.find(sup => Number(sup.cost) === Number(o.cost));
-        if (s) supplierName = s.name;
+        if (s) {
+          supplierName = s.name;
+          supplierLink = s.link || '';
+        }
       }
 
       return {
         ...o,
-        uid: o.customerId, // Map database customer_id to UI uid
+        uid: o.customerId || o.uid || '-', // Defensive mapping
         gameName: game ? game.name : 'Unknown Game',
         pkgName: pkg ? pkg.name : 'Unknown Package',
-        supplierName
+        supplierName,
+        supplierLink
       };
     });
   },
@@ -231,9 +236,9 @@ const Store = {
       id: 'ORD-' + String(Date.now()).slice(-6),
       game_id: o.gameId,
       pkg_id: o.pkgId,
-      customer_id: o.customerId,
-      sell_price: o.sellPrice,
-      cost: o.cost,
+      customer_id: o.uid || o.customerId, // Fix mapping
+      sell_price: Number(o.sellPrice) || 0,
+      cost: Number(o.cost) || 0,
       status: 'pending',
       created_by: o.createdBy,
       created_at: new Date().toISOString()
