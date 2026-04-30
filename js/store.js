@@ -6,7 +6,7 @@ const SUPABASE_URL = 'https://jukqkngkinefavbrymrs.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1a3FrbmdraW5lZmF2YnJ5bXJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MzU3NDksImV4cCI6MjA5MzExMTc0OX0.1qvRUkWNKleNAyDJAAECjEn9-cTok_ECAkdae3w7zE4';
 
 // Initialize Supabase Client
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 const Store = {
   // ── Sync Cache ──
@@ -25,10 +25,10 @@ const Store = {
     
     try {
       const [u, g, p, o] = await Promise.all([
-        supabase.from('admins').select('*'),
-        supabase.from('games').select('*').order('created_at', { ascending: true }),
-        supabase.from('packages').select('*').order('created_at', { ascending: true }),
-        supabase.from('orders').select('*').order('created_at', { ascending: false })
+        supabaseClient.from('admins').select('*'),
+        supabaseClient.from('games').select('*').order('created_at', { ascending: true }),
+        supabaseClient.from('packages').select('*').order('created_at', { ascending: true }),
+        supabaseClient.from('orders').select('*').order('created_at', { ascending: false })
       ]);
 
       if (u.error) console.error('❌ Store Error (admins):', u.error);
@@ -61,17 +61,17 @@ const Store = {
     }));
 
       console.log('📦 Store Initialized (Supabase)');
-      // this.initRealtime(); // Disable for debugging
+      this.initRealtime();
     } catch (err) {
       console.error('❌ Store Critical Init Failure:', err);
     }
   },
 
   async initRealtime() {
-    if (this._isSubscribed || !supabase) return;
+    if (this._isSubscribed || !supabaseClient) return;
     this._isSubscribed = true;
 
-    supabase
+    supabaseClient
       .channel('public-db-changes')
       .on('postgres_changes', { event: '*', schema: 'public' }, async (payload) => {
         console.log('🔄 Realtime Change Detected:', payload);
@@ -102,11 +102,11 @@ const Store = {
     })); 
   },
   async addUser(name, password, role = 'admin') {
-    const { data } = await supabase.from('admins').insert([{ username: name, password, role }]).select();
+    const { data } = await supabaseClient.from('admins').insert([{ username: name, password, role }]).select();
     if (data) await this.init();
   },
   async removeUser(name) {
-    const { error } = await supabase.from('admins').delete().eq('username', name).neq('role', 'owner');
+    const { error } = await supabaseClient.from('admins').delete().eq('username', name).neq('role', 'owner');
     if (!error) await this.init();
   },
   login(name, password) {
@@ -121,7 +121,7 @@ const Store = {
     if (data.displayName !== undefined) updateData.display_name = data.displayName;
     if (data.avatarUrl !== undefined) updateData.avatar_url = data.avatarUrl;
 
-    const { error } = await supabase.from('admins').update(updateData).eq('username', name);
+    const { error } = await supabaseClient.from('admins').update(updateData).eq('username', name);
     if (!error) {
       await this.init();
       // Update session if it's the current user
@@ -155,15 +155,15 @@ const Store = {
   // ── Games ──
   getGames() { return this._cache.games; },
   async addGame(game) {
-    const { error } = await supabase.from('games').insert([game]);
+    const { error } = await supabaseClient.from('games').insert([game]);
     if (!error) await this.init();
   },
   async updateGame(id, data) {
-    const { error } = await supabase.from('games').update(data).eq('id', id);
+    const { error } = await supabaseClient.from('games').update(data).eq('id', id);
     if (!error) await this.init();
   },
   async removeGame(id) {
-    const { error } = await supabase.from('games').delete().eq('id', id);
+    const { error } = await supabaseClient.from('games').delete().eq('id', id);
     if (!error) await this.init();
   },
 
@@ -178,7 +178,7 @@ const Store = {
       sell_price: pkg.sellPrice,
       suppliers: pkg.suppliers
     };
-    const { error } = await supabase.from('packages').insert([dbPkg]);
+    const { error } = await supabaseClient.from('packages').insert([dbPkg]);
     if (!error) await this.init();
   },
   async updatePackage(id, data) {
@@ -187,11 +187,11 @@ const Store = {
     if (data.sellPrice) updateData.sell_price = data.sellPrice;
     if (data.suppliers) updateData.suppliers = data.suppliers;
 
-    const { error } = await supabase.from('packages').update(updateData).eq('id', id);
+    const { error } = await supabaseClient.from('packages').update(updateData).eq('id', id);
     if (!error) await this.init();
   },
   async removePackage(id) {
-    const { error } = await supabase.from('packages').delete().eq('id', id);
+    const { error } = await supabaseClient.from('packages').delete().eq('id', id);
     if (!error) await this.init();
   },
 
@@ -218,7 +218,7 @@ const Store = {
       created_by: o.createdBy,
       created_at: new Date().toISOString()
     };
-    const { error } = await supabase.from('orders').insert([dbOrder]);
+    const { error } = await supabaseClient.from('orders').insert([dbOrder]);
     if (!error) {
       await this.init();
       return dbOrder;
@@ -236,19 +236,19 @@ const Store = {
       updateData.completed_at = new Date().toISOString();
     }
 
-    const { error } = await supabase.from('orders').update(updateData).eq('id', id);
+    const { error } = await supabaseClient.from('orders').update(updateData).eq('id', id);
     if (!error) await this.init();
   },
   async updateOrder(id, data) {
-    const { error } = await supabase.from('orders').update(data).eq('id', id);
+    const { error } = await supabaseClient.from('orders').update(data).eq('id', id);
     if (!error) await this.init();
   },
   async removeOrder(id) {
-    const { error } = await supabase.from('orders').delete().eq('id', id);
+    const { error } = await supabaseClient.from('orders').delete().eq('id', id);
     if (!error) await this.init();
   },
   async clearCompletedOrders() {
-    const { error } = await supabase.from('orders').delete().eq('status', 'completed');
+    const { error } = await supabaseClient.from('orders').delete().eq('status', 'completed');
     if (!error) await this.init();
   },
 
