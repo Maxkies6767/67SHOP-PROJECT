@@ -117,6 +117,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/store.js"></script>
   <script src="../js/components.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
@@ -124,6 +125,7 @@
     let currentTempAvatar = '';
 
     document.addEventListener('DOMContentLoaded', async () => {
+      await Store.init();
       const user = Store.requireAuth();
       if (!user) return;
 
@@ -252,11 +254,11 @@
       closeModal();
     }
 
-    function saveProfile() {
+    async function saveProfile() {
       const user = Store.getSession();
       const newName = document.getElementById('displayNameInput').value;
       
-      const success = Store.updateUser(user.name, {
+      const success = await Store.updateUser(user.name, {
         displayName: newName,
         avatarUrl: currentTempAvatar
       });

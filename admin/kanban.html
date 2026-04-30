@@ -43,15 +43,18 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/store.js"></script>
   <script src="../js/sound.js"></script>
   <script src="../js/components.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
+      await Store.init();
       Store.requireAuth();
       await loadComponent('headerSlot', '../components/header.html');
       await loadComponent('sidebarSlot', '../components/sidebar.html');
       renderKanban();
+      Store.subscribe(renderKanban);
     });
 
     function renderKanban() {
@@ -128,31 +131,29 @@
       `;
     }
 
-    function copyAndGo(orderId, uid, link) {
-      navigator.clipboard.writeText(uid).then(() => {
-        Store.updateOrderStatus(orderId, 'processing');
-        SFX.play('success');
-        renderKanban();
-        if (link) window.open(link, '_blank');
-      }).catch(() => {
+    async function copyAndGo(orderId, uid, link) {
+      try {
+        await navigator.clipboard.writeText(uid);
+      } catch(e) {
         const ta = document.createElement('textarea');
         ta.value = uid; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-        Store.updateOrderStatus(orderId, 'processing');
-        renderKanban();
-        if (link) window.open(link, '_blank');
-      });
+      }
+      await Store.updateOrderStatus(orderId, 'processing');
+      SFX.play('success');
+      renderKanban();
+      if (link) window.open(link, '_blank');
     }
 
-    function completeOrder(id) {
-      Store.updateOrderStatus(id, 'completed');
+    async function completeOrder(id) {
+      await Store.updateOrderStatus(id, 'completed');
       SFX.play('success');
       renderKanban();
     }
 
     function confirmDelete(id) {
       SFX.play('delete');
-      showModal('🗑️ ลบออเดอร์', 'ต้องการลบออเดอร์ ' + id + ' จริงหรือไม่? การลบจะไม่สามารถกู้คืนได้', () => {
-        Store.removeOrder(id);
+      showModal('🗑️ ลบออเดอร์', 'ต้องการลบออเดอร์ ' + id + ' จริงหรือไม่? การลบจะไม่สามารถกู้คืนได้', async () => {
+        await Store.removeOrder(id);
         renderKanban();
       });
     }

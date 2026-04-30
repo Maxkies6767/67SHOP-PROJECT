@@ -62,15 +62,18 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/store.js"></script>
   <script src="../js/sound.js"></script>
   <script src="../js/components.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
+      await Store.init();
       Store.requireAuth();
       await loadComponent('headerSlot', '../components/header.html');
       await loadComponent('sidebarSlot', '../components/sidebar.html');
       render();
+      Store.subscribe(render);
     });
 
     function render() {
@@ -140,26 +143,23 @@
       }).join('');
     }
 
-    function editOrder(id) {
+    async function editOrder(id) {
       const orders = Store.getOrders();
       const o = orders.find(x => x.id === id);
       if (!o) return;
 
       const newAccepted = prompt("แก้ไข ผู้รับงาน:", o.acceptedBy || "");
       if (newAccepted === null) return;
-      const newCompleted = prompt("แก้ไข ผู้ส่งงาน:", o.completedBy || "");
-      if (newCompleted === null) return;
-      
-      o.acceptedBy = newAccepted;
-      o.completedBy = newCompleted;
-      
-      Store.saveOrders(orders);
+      await Store.updateOrder(id, {
+        accepted_by: newAccepted,
+        completed_by: newCompleted
+      });
       render();
     }
 
     function deleteOrder(id) {
-      showModal('ลบออเดอร์', 'ต้องการลบออเดอร์ ' + id + ' หรือไม่?', () => {
-        Store.removeOrder(id);
+      showModal('ลบออเดอร์', 'ต้องการลบออเดอร์ ' + id + ' หรือไม่?', async () => {
+        await Store.removeOrder(id);
         render();
       });
     }

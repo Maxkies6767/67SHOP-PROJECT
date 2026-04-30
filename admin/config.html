@@ -129,6 +129,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/store.js"></script>
   <script src="../js/sound.js"></script>
   <script src="../js/components.js"></script>
@@ -139,6 +140,7 @@
     let supplierCount = 0;
 
     document.addEventListener('DOMContentLoaded', async () => {
+      await Store.init();
       Store.requireAuth(['owner']);
       await loadComponent('headerSlot', '../components/header.html');
       await loadComponent('sidebarSlot', '../components/sidebar.html');
@@ -248,25 +250,18 @@
       document.getElementById('passModalOverlay').classList.add('show');
     }
 
-    function confirmChangePass() {
+    async function confirmChangePass() {
       const newName = document.getElementById('editUserName').value.trim();
       const newPass = document.getElementById('newPassInput').value.trim();
       if (!newName || !newPass) return alert('กรุณากรอกข้อมูลให้ครบ');
       
-      const users = Store.getUsers();
-      const idx = users.findIndex(u => u.name === targetUserForPass);
-      if (idx > -1) {
-        // Check if new name already exists (if name changed)
-        if (newName !== targetUserForPass && users.some(u => u.name === newName)) {
-          return alert('ชื่อนี้มีอยู่ในระบบแล้ว');
-        }
-        
-        users[idx].name = newName;
-        users[idx].password = newPass;
-        Store.saveUsers(users);
+      const success = await Store.updateUser(targetUserForPass, { name: newName, password: newPass });
+      if (success) {
         SFX.play('success');
         closePassModal();
         renderUsers();
+      } else {
+        alert('เกิดข้อผิดพลาดในการอัปเดต');
       }
     }
 
@@ -274,11 +269,11 @@
       document.getElementById('passModalOverlay').classList.remove('show');
     }
 
-    function addAdmin() {
+    async function addAdmin() {
       const name = document.getElementById('newAdminName').value.trim();
       const pass = document.getElementById('newAdminPass').value.trim();
       if (!name || !pass) return alert('กรุณากรอกชื่อและรหัสผ่าน');
-      Store.addUser(name, pass, 'admin');
+      await Store.addUser(name, pass, 'admin');
       SFX.play('success');
       document.getElementById('newAdminName').value = '';
       document.getElementById('newAdminPass').value = '';
@@ -286,8 +281,8 @@
     }
 
     function removeAdmin(name) {
-      showModal('ลบผู้ใช้', 'ลบ "' + name + '" ออกจากระบบ?', () => {
-        Store.removeUser(name);
+      showModal('ลบผู้ใช้', 'ลบ "' + name + '" ออกจากระบบ?', async () => {
+        await Store.removeUser(name);
         renderUsers();
       });
     }
@@ -313,7 +308,11 @@
       el.querySelectorAll('.del-game-btn').forEach(btn => {
         btn.addEventListener('click', function() {
           const gid = decodeURIComponent(this.dataset.gid);
-          showModal('ลบเกม', 'ลบเกมนี้ออกจากระบบ?', () => { Store.removeGame(gid); renderGames(); loadGameSelect(); });
+          showModal('ลบเกม', 'ลบเกมนี้ออกจากระบบ?', async () => { 
+            await Store.removeGame(gid); 
+            renderGames(); 
+            loadGameSelect(); 
+          });
         });
       });
       el.querySelectorAll('.edit-game-btn').forEach(btn => {
@@ -342,17 +341,17 @@
       document.getElementById('gameCancelBtn').style.display = 'none';
     }
 
-    function addGame() {
+    async function addGame() {
       const name = document.getElementById('newGameName').value.trim();
       const icon = document.getElementById('newGameIcon').value.trim() || '../assets/images/best logo.png';
       if (!name) return alert('กรุณากรอกชื่อเกม');
       
       if (editingGameId) {
-        Store.updateGame(editingGameId, { name, icon });
+        await Store.updateGame(editingGameId, { name, icon });
         SFX.play('success');
         cancelEditGame();
       } else {
-        Store.addGame({ id: name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(), name, icon });
+        await Store.addGame({ id: name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(), name, icon });
         SFX.play('success');
         document.getElementById('newGameName').value = '';
         document.getElementById('newGameIcon').value = '';
@@ -412,12 +411,12 @@
         `).join('');
     }
 
-    function addPackage() {
+    async function addPackage() {
       const gameId = document.getElementById('pkgGameSelect').value;
       const name = document.getElementById('pkgName').value.trim();
       const sellPrice = parseInt(document.getElementById('pkgSellPrice').value) || 0;
       if (!gameId || !name || !sellPrice) return alert('กรุณากรอกข้อมูลให้ครบ (เกม, ชื่อแพ็กเกจ, ราคาขาย)');
-
+  
       const suppliers = [];
       document.querySelectorAll('.supplier-row').forEach(row => {
         const sName = row.querySelector('.sup-name').value.trim();
@@ -425,15 +424,15 @@
         const sLink = row.querySelector('.sup-link').value.trim();
         if (sName) suppliers.push({ name: sName, cost: sCost, link: sLink });
       });
-
+  
       const pkgData = { gameId, name, sellPrice, suppliers };
-
+  
       if (editingPkgId) {
-        Store.updatePackage(editingPkgId, pkgData);
+        await Store.updatePackage(editingPkgId, pkgData);
         SFX.play('success');
         cancelEditPkg();
       } else {
-        Store.addPackage(pkgData);
+        await Store.addPackage(pkgData);
         SFX.play('success');
         clearPkgForm();
       }
@@ -463,12 +462,12 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function copyPkg(id) {
+    async function copyPkg(id) {
       const p = Store.getPackages().find(x => x.id === id);
       if (!p) return;
       const newPkg = { ...p, name: p.name + ' (สำเนา)' };
       delete newPkg.id; // Store.addPackage will generate a new ID
-      Store.addPackage(newPkg);
+      await Store.addPackage(newPkg);
       SFX.play('success');
       renderPackages();
     }
@@ -489,7 +488,10 @@
     }
 
     function removePkg(id) {
-      showModal('ลบแพ็กเกจ', 'ลบแพ็กเกจนี้?', () => { Store.removePackage(id); renderPackages(); });
+      showModal('ลบแพ็กเกจ', 'ลบแพ็กเกจนี้?', async () => { 
+        await Store.removePackage(id); 
+        renderPackages(); 
+      });
     }
   </script>
 </body>

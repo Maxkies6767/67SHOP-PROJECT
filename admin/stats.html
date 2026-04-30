@@ -69,15 +69,18 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/store.js"></script>
   <script src="../js/sound.js"></script>
   <script src="../js/components.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
+      await Store.init();
       Store.requireAuth(['owner']);
       await loadComponent('headerSlot', '../components/header.html');
       await loadComponent('sidebarSlot', '../components/sidebar.html');
       render();
+      Store.subscribe(render);
     });
 
     function render() {
@@ -229,7 +232,7 @@
         </tr>`;
       }).join('');
     }
-    function editOrder(id) {
+    async function editOrder(id) {
       const orders = Store.getOrders();
       const o = orders.find(x => x.id === id);
       if (!o) return;
@@ -239,24 +242,23 @@
       const newCompleted = prompt("แก้ไข ผู้ส่งงาน:", o.completedBy || "");
       if (newCompleted === null) return;
       
-      o.acceptedBy = newAccepted;
-      o.completedBy = newCompleted;
-      
-      Store.saveOrders(orders);
+      await Store.updateOrder(id, {
+        accepted_by: newAccepted,
+        completed_by: newCompleted
+      });
       render();
     }
 
     function deleteOrder(id) {
-      showModal('ลบออเดอร์', 'ต้องการลบประวัติออเดอร์ ' + id + ' หรือไม่?', () => {
-        Store.removeOrder(id);
+      showModal('ลบออเดอร์', 'ต้องการลบประวัติออเดอร์ ' + id + ' หรือไม่?', async () => {
+        await Store.removeOrder(id);
         render();
       });
     }
 
     function clearAllHistory() {
-      showModal('ลบทั้งหมด', 'ต้องการลบประวัติออเดอร์ "ทั้งหมด" ใช่หรือไม่? (ไม่สามารถกู้คืนได้)', () => {
-        const orders = Store.getOrders().filter(o => o.status !== 'completed');
-        Store.saveOrders(orders);
+      showModal('ลบทั้งหมด', 'ต้องการลบประวัติออเดอร์ "ทั้งหมด" ใช่หรือไม่? (ไม่สามารถกู้คืนได้)', async () => {
+        await Store.clearCompletedOrders();
         render();
       });
     }

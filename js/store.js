@@ -1,51 +1,132 @@
 /* ═══════════════════════════════════════
-   67SHOP — Data Store (LocalStorage)
+   67SHOP — Data Store (Supabase Realtime)
    ═══════════════════════════════════════ */
 
-const Store = {
-  // ── Users ──
-  _defaultUsers: [
-    { name: 'Owner', password: '6767', role: 'owner' },
-    { name: 'Admin1', password: '1234', role: 'admin' }
-  ],
+const SUPABASE_URL = 'https://jukqkngkinefavbrymrs.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1a3FrbmdraW5lZmF2YnJ5bXJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MzU3NDksImV4cCI6MjA5MzExMTc0OX0.1qvRUkWNKleNAyDJAAECjEn9-cTok_ECAkdae3w7zE4';
 
-  getUsers() {
-    const u = localStorage.getItem('shop67_users');
-    if (!u) { this.saveUsers(this._defaultUsers); return this._defaultUsers; }
-    return JSON.parse(u);
+// Initialize Supabase Client
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+const Store = {
+  // ── Sync Cache ──
+  _cache: {
+    users: [],
+    games: [],
+    packages: [],
+    orders: []
   },
-  saveUsers(users) { localStorage.setItem('shop67_users', JSON.stringify(users)); },
-  addUser(name, password, role = 'admin') {
-    const users = this.getUsers();
-    users.push({ name, password, role });
-    this.saveUsers(users);
+  _listeners: [],
+  _isSubscribed: false,
+
+  async init() {
+    if (!supabase) return console.error('Supabase not loaded');
+    
+    // Load all data into cache once
+    const [u, g, p, o] = await Promise.all([
+      supabase.from('admins').select('*'),
+      supabase.from('games').select('*').order('created_at', { ascending: true }),
+      supabase.from('packages').select('*').order('created_at', { ascending: true }),
+      supabase.from('orders').select('*').order('created_at', { ascending: false })
+    ]);
+
+    this._cache.users = u.data || [];
+    this._cache.games = g.data || [];
+    this._cache.packages = (p.data || []).map(pkg => ({
+      id: pkg.id,
+      gameId: pkg.game_id,
+      name: pkg.name,
+      sellPrice: pkg.sell_price,
+      suppliers: pkg.suppliers
+    }));
+    this._cache.orders = (o.data || []).map(ord => ({
+      id: ord.id,
+      gameId: ord.game_id,
+      pkgId: ord.pkg_id,
+      customerId: ord.customer_id,
+      sellPrice: ord.sell_price,
+      cost: ord.cost,
+      status: ord.status,
+      createdBy: ord.created_by,
+      acceptedBy: ord.accepted_by,
+      completedBy: ord.completed_by,
+      createdAt: ord.created_at,
+      completedAt: ord.completed_at
+    }));
+
+    console.log('📦 Store Initialized (Supabase)');
+    this.initRealtime();
   },
-  removeUser(name) {
-    let users = this.getUsers();
-    users = users.filter(u => u.name !== name || u.role === 'owner');
-    this.saveUsers(users);
+
+  async initRealtime() {
+    if (this._isSubscribed || !supabase) return;
+    this._isSubscribed = true;
+
+    supabase
+      .channel('public-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public' }, async (payload) => {
+        console.log('🔄 Realtime Change Detected:', payload);
+        await this.init();
+        this._notifyListeners();
+      })
+      .subscribe();
+  },
+
+  subscribe(callback) {
+    if (typeof callback === 'function') {
+      this._listeners.push(callback);
+    }
+  },
+
+  _notifyListeners() {
+    this._listeners.forEach(cb => cb());
+  },
+
+  // ── Users ──
+  getUsers() { 
+    return this._cache.users.map(u => ({ 
+      name: u.username, 
+      password: u.password, 
+      role: u.role,
+      displayName: u.display_name,
+      avatarUrl: u.avatar_url
+    })); 
+  },
+  async addUser(name, password, role = 'admin') {
+    const { data } = await supabase.from('admins').insert([{ username: name, password, role }]).select();
+    if (data) await this.init();
+  },
+  async removeUser(name) {
+    const { error } = await supabase.from('admins').delete().eq('username', name).neq('role', 'owner');
+    if (!error) await this.init();
   },
   login(name, password) {
     const users = this.getUsers();
     return users.find(u => u.name === name && u.password === password) || null;
   },
-  updateUser(name, data) {
-    const users = this.getUsers();
-    const idx = users.findIndex(u => u.name === name);
-    if (idx > -1) {
-      users[idx] = { ...users[idx], ...data };
-      this.saveUsers(users);
+  async updateUser(name, data) {
+    const updateData = {};
+    if (data.name) updateData.username = data.name;
+    if (data.password) updateData.password = data.password;
+    if (data.role) updateData.role = data.role;
+    if (data.displayName !== undefined) updateData.display_name = data.displayName;
+    if (data.avatarUrl !== undefined) updateData.avatar_url = data.avatarUrl;
+
+    const { error } = await supabase.from('admins').update(updateData).eq('username', name);
+    if (!error) {
+      await this.init();
       // Update session if it's the current user
       const s = this.getSession();
       if (s && s.name === name) {
-        this.setSession(users[idx]);
+        const updatedUser = this.getUsers().find(u => u.name === (data.name || name));
+        this.setSession(updatedUser);
       }
       return true;
     }
     return false;
   },
 
-  // ── Session ──
+  // ── Session (Still LocalStorage for persistence) ──
   setSession(user) { localStorage.setItem('shop67_session', JSON.stringify(user)); },
   getSession() {
     const s = localStorage.getItem('shop67_session');
@@ -63,88 +144,49 @@ const Store = {
   },
 
   // ── Games ──
-  _defaultGames: [
-    { id: 'rov', name: 'ROV', icon: '../assets/images/icon_rov.png' },
-    { id: 'freefire', name: 'Free Fire', icon: '../assets/images/icon_freefire.png' },
-    { id: 'genshin', name: 'Genshin Impact', icon: '../assets/images/icon_genshin.png' },
-    { id: 'roblox', name: 'Roblox', icon: '../assets/images/icon_roblox.png' }
-  ],
-
-  getGames() {
-    const g = localStorage.getItem('shop67_games');
-    if (!g) { this.saveGames(this._defaultGames); return this._defaultGames; }
-    return JSON.parse(g);
+  getGames() { return this._cache.games; },
+  async addGame(game) {
+    const { error } = await supabase.from('games').insert([game]);
+    if (!error) await this.init();
   },
-  saveGames(games) { localStorage.setItem('shop67_games', JSON.stringify(games)); },
-  addGame(game) { const g = this.getGames(); g.push(game); this.saveGames(g); },
-  updateGame(id, data) {
-    const g = this.getGames();
-    const i = g.findIndex(x => x.id === id);
-    if (i > -1) { Object.assign(g[i], data); this.saveGames(g); }
+  async updateGame(id, data) {
+    const { error } = await supabase.from('games').update(data).eq('id', id);
+    if (!error) await this.init();
   },
-  removeGame(id) { this.saveGames(this.getGames().filter(g => g.id !== id)); },
+  async removeGame(id) {
+    const { error } = await supabase.from('games').delete().eq('id', id);
+    if (!error) await this.init();
+  },
 
   // ── Packages ──
-  _defaultPackages: [
-    {
-      id: 'rov-1', gameId: 'rov', name: '90 คูปอง', sellPrice: 34,
-      suppliers: [
-        { name: 'TopupA', cost: 25, link: 'https://example.com/topupA' },
-        { name: 'TopupB', cost: 27, link: 'https://example.com/topupB' },
-        { name: 'TopupC', cost: 29, link: 'https://example.com/topupC' }
-      ]
-    },
-    {
-      id: 'ff-1', gameId: 'freefire', name: '100 เพชร', sellPrice: 33,
-      suppliers: [
-        { name: 'DiamondShop', cost: 22, link: 'https://example.com/ds' },
-        { name: 'FFStore', cost: 24, link: 'https://example.com/ffs' }
-      ]
-    }
-  ],
-
-  getPackages() {
-    const p = localStorage.getItem('shop67_packages');
-    if (!p) { this.savePackages(this._defaultPackages); return this._defaultPackages; }
-    let pkgs = JSON.parse(p);
-    
-    // Migration: Convert old sup1, sup2, sup3 to suppliers array
-    let migrated = false;
-    pkgs = pkgs.map(pkg => {
-      if (!pkg.suppliers) {
-        pkg.suppliers = [];
-        if (pkg.sup1Name) pkg.suppliers.push({ name: pkg.sup1Name, cost: pkg.sup1Cost || 0, link: pkg.sup1Link || '' });
-        if (pkg.sup2Name) pkg.suppliers.push({ name: pkg.sup2Name, cost: pkg.sup2Cost || 0, link: pkg.sup2Link || '' });
-        if (pkg.sup3Name) pkg.suppliers.push({ name: pkg.sup3Name, cost: pkg.sup3Cost || 0, link: pkg.sup3Link || '' });
-        
-        // Remove old keys
-        delete pkg.sup1Name; delete pkg.sup1Cost; delete pkg.sup1Link;
-        delete pkg.sup2Name; delete pkg.sup2Cost; delete pkg.sup2Link;
-        delete pkg.sup3Name; delete pkg.sup3Cost; delete pkg.sup3Link;
-        migrated = true;
-      }
-      return pkg;
-    });
-    
-    if (migrated) this.savePackages(pkgs);
-    return pkgs;
-  },
-  savePackages(pkgs) { localStorage.setItem('shop67_packages', JSON.stringify(pkgs)); },
+  getPackages() { return this._cache.packages; },
   getPackagesByGame(gameId) { return this.getPackages().filter(p => p.gameId === gameId); },
-  addPackage(pkg) {
-    const p = this.getPackages();
-    pkg.id = pkg.gameId + '-' + Date.now();
-    p.push(pkg);
-    this.savePackages(p);
+  async addPackage(pkg) {
+    const dbPkg = {
+      id: pkg.gameId + '-' + Date.now(),
+      game_id: pkg.gameId,
+      name: pkg.name,
+      sell_price: pkg.sellPrice,
+      suppliers: pkg.suppliers
+    };
+    const { error } = await supabase.from('packages').insert([dbPkg]);
+    if (!error) await this.init();
   },
-  updatePackage(id, data) {
-    const p = this.getPackages();
-    const i = p.findIndex(x => x.id === id);
-    if (i > -1) { Object.assign(p[i], data); this.savePackages(p); }
-  },
-  removePackage(id) { this.savePackages(this.getPackages().filter(p => p.id !== id)); },
+  async updatePackage(id, data) {
+    const updateData = {};
+    if (data.name) updateData.name = data.name;
+    if (data.sellPrice) updateData.sell_price = data.sellPrice;
+    if (data.suppliers) updateData.suppliers = data.suppliers;
 
-  // ── Cheapest supplier for a package ──
+    const { error } = await supabase.from('packages').update(updateData).eq('id', id);
+    if (!error) await this.init();
+  },
+  async removePackage(id) {
+    const { error } = await supabase.from('packages').delete().eq('id', id);
+    if (!error) await this.init();
+  },
+
+  // ── Cheapest supplier ──
   getCheapestSupplier(pkg) {
     if (!pkg.suppliers || pkg.suppliers.length === 0) return null;
     const sups = [...pkg.suppliers]
@@ -154,43 +196,59 @@ const Store = {
   },
 
   // ── Orders ──
-  getOrders() { return JSON.parse(localStorage.getItem('shop67_orders') || '[]'); },
-  saveOrders(orders) { localStorage.setItem('shop67_orders', JSON.stringify(orders)); },
-  addOrder(o) {
-    const orders = this.getOrders();
-    o.id = 'ORD-' + String(Date.now()).slice(-6);
-    o.status = 'pending';
-    o.createdAt = new Date().toISOString();
-    orders.unshift(o);
-    this.saveOrders(orders);
-    return o;
-  },
-  updateOrderStatus(id, status) {
-    const orders = this.getOrders();
-    const i = orders.findIndex(o => o.id === id);
-    if (i > -1) {
-      const session = this.getSession();
-      const userName = session ? session.name : 'System';
-      
-      orders[i].status = status;
-      if (status === 'processing' && !orders[i].acceptedBy) {
-        orders[i].acceptedBy = userName;
-      }
-      if (status === 'completed') {
-        orders[i].completedBy = userName;
-        orders[i].completedAt = new Date().toISOString();
-      }
-      this.saveOrders(orders);
+  getOrders() { return this._cache.orders; },
+  async addOrder(o) {
+    const dbOrder = {
+      id: 'ORD-' + String(Date.now()).slice(-6),
+      game_id: o.gameId,
+      pkg_id: o.pkgId,
+      customer_id: o.customerId,
+      sell_price: o.sellPrice,
+      cost: o.cost,
+      status: 'pending',
+      created_by: o.createdBy,
+      created_at: new Date().toISOString()
+    };
+    const { error } = await supabase.from('orders').insert([dbOrder]);
+    if (!error) {
+      await this.init();
+      return dbOrder;
     }
+    return null;
   },
-  removeOrder(id) { this.saveOrders(this.getOrders().filter(o => o.id !== id)); },
+  async updateOrderStatus(id, status) {
+    const session = this.getSession();
+    const userName = session ? session.name : 'System';
+    
+    const updateData = { status };
+    if (status === 'processing') updateData.accepted_by = userName;
+    if (status === 'completed') {
+      updateData.completed_by = userName;
+      updateData.completed_at = new Date().toISOString();
+    }
 
-  // ── Stats ──
+    const { error } = await supabase.from('orders').update(updateData).eq('id', id);
+    if (!error) await this.init();
+  },
+  async updateOrder(id, data) {
+    const { error } = await supabase.from('orders').update(data).eq('id', id);
+    if (!error) await this.init();
+  },
+  async removeOrder(id) {
+    const { error } = await supabase.from('orders').delete().eq('id', id);
+    if (!error) await this.init();
+  },
+  async clearCompletedOrders() {
+    const { error } = await supabase.from('orders').delete().eq('status', 'completed');
+    if (!error) await this.init();
+  },
+
+  // ── Stats (Computed from cache) ──
   getStats() {
     const orders = this.getOrders();
     const completed = orders.filter(o => o.status === 'completed');
-    const totalRevenue = completed.reduce((s, o) => s + (o.sellPrice || 0), 0);
-    const totalCost = completed.reduce((s, o) => s + (o.cost || 0), 0);
+    const totalRevenue = completed.reduce((s, o) => s + (Number(o.sellPrice) || 0), 0);
+    const totalCost = completed.reduce((s, o) => s + (Number(o.cost) || 0), 0);
     return {
       totalOrders: orders.length,
       completedOrders: completed.length,
