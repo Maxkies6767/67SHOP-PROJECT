@@ -13,9 +13,9 @@ const Store = {
   _cache: {
     users: [],
     games: [],
-    packages: [],
     orders: []
   },
+  isReady: false,
   _listeners: [],
   _isSubscribed: false,
 

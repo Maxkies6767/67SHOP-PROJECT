@@ -39,27 +39,51 @@
   <script src="js/store.js"></script>
   <script src="js/auth.js"></script>
   <script>
-    (async function() {
-      await Store.init();
-      if (Store.getSession()) window.location.href = 'admin/dashboard.html';
-      
-      document.getElementById('loginForm').addEventListener('submit', e => {
+    const form = document.getElementById('loginForm');
+    const btn = form.querySelector('button');
+    const errorMsg = document.getElementById('errorMsg');
+
+    // 1. Attach listener immediately to prevent reloads
+    form.addEventListener('submit', async e => {
       e.preventDefault();
+      
       const pw = document.getElementById('inputPassword').value.trim();
+      
+      // Wait for store if not ready
+      if (!Store.isReady) {
+        errorMsg.textContent = '⏳ กำลังเชื่อมต่อฐานข้อมูล...';
+        return;
+      }
+
       const user = Auth.attemptByPassword(pw);
       if (user) {
-        Store.setSession(user);
         window.location.href = 'admin/dashboard.html';
       } else {
-        document.getElementById('errorMsg').textContent = '❌ รหัสผ่านไม่ถูกต้อง';
+        errorMsg.textContent = '❌ รหัสผ่านไม่ถูกต้อง';
         document.getElementById('inputPassword').style.borderColor = 'var(--danger)';
         setTimeout(() => {
           document.getElementById('inputPassword').style.borderColor = '';
-          document.getElementById('errorMsg').textContent = '';
+          errorMsg.textContent = '';
         }, 2500);
       }
     });
-  })();
+
+    // 2. Initialize Store
+    (async function() {
+      btn.disabled = true;
+      btn.textContent = 'กำลังโหลด...';
+      
+      try {
+        await Store.init();
+        Store.isReady = true;
+        if (Store.getSession()) window.location.href = 'admin/dashboard.html';
+      } catch (err) {
+        errorMsg.textContent = '❌ เชื่อมต่อล้มเหลว กรุณารีเฟรชหน้าเว็บ';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'เข้าสู่ระบบ';
+      }
+    })();
   </script>
 </body>
 </html>
