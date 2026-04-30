@@ -21,14 +21,20 @@ const Store = {
 
   async init() {
     if (!supabase) return console.error('Supabase not loaded');
+    console.log('⏳ Store: Connecting to Supabase...');
     
-    // Load all data into cache once
-    const [u, g, p, o] = await Promise.all([
-      supabase.from('admins').select('*'),
-      supabase.from('games').select('*').order('created_at', { ascending: true }),
-      supabase.from('packages').select('*').order('created_at', { ascending: true }),
-      supabase.from('orders').select('*').order('created_at', { ascending: false })
-    ]);
+    try {
+      const [u, g, p, o] = await Promise.all([
+        supabase.from('admins').select('*'),
+        supabase.from('games').select('*').order('created_at', { ascending: true }),
+        supabase.from('packages').select('*').order('created_at', { ascending: true }),
+        supabase.from('orders').select('*').order('created_at', { ascending: false })
+      ]);
+
+      if (u.error) console.error('❌ Store Error (admins):', u.error);
+      if (g.error) console.error('❌ Store Error (games):', g.error);
+      if (p.error) console.error('❌ Store Error (packages):', p.error);
+      if (o.error) console.error('❌ Store Error (orders):', o.error);
 
     this._cache.users = u.data || [];
     this._cache.games = g.data || [];
@@ -54,8 +60,11 @@ const Store = {
       completedAt: ord.completed_at
     }));
 
-    console.log('📦 Store Initialized (Supabase)');
-    this.initRealtime();
+      console.log('📦 Store Initialized (Supabase)');
+      // this.initRealtime(); // Disable for debugging
+    } catch (err) {
+      console.error('❌ Store Critical Init Failure:', err);
+    }
   },
 
   async initRealtime() {
