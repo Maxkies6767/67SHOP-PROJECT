@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เปรียบเทียบราคา — 67SHOP</title>
+  <link rel="icon" href="../assets/images/best logo.png">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .compare-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .search-box-wrap {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 2.5rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .search-box-wrap::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(108, 92, 231, 0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .compare-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      padding: 1.2rem 1.5rem;
+      padding-left: 3.5rem;
+      border-radius: 15px;
+      color: white;
+      font-size: 1.1rem;
+      transition: all 0.3s;
+      outline: none;
+    }
+    .compare-input:focus {
+      border-color: var(--secondary);
+      box-shadow: 0 0 20px rgba(108, 92, 231, 0.2);
+    }
+    .search-icon {
+      position: absolute;
+      left: 3.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 1.2rem;
+    }
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.5rem;
+    }
+    .compare-card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 1.5rem;
+      transition: transform 0.3s, border-color 0.3s;
+      position: relative;
+    }
+    .compare-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--secondary);
+    }
+    .badge-cheapest {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: var(--success);
+      color: white;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+    }
+    .sup-logo {
+      width: 32px; height: 32px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; color: var(--secondary);
+      font-size: 0.8rem;
+    }
+    .price-tag {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: white;
+      margin-top: 1rem;
+    }
+    .fuzzy-score {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      margin-top: 0.5rem;
+    }
+    .filter-tags {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .tag {
+      font-size: 0.7rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.2rem 0.6rem;
+      border-radius: 5px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div id="headerSlot"></div>
+  <div class="admin-wrap">
+    <div id="sidebarSlot"></div>
+    <main class="main-content">
+      
+      <div class="compare-container">
+        <div class="hero-banner" style="margin-bottom: 2rem;">
+          <h1 class="hero-title thai">🔍 ระบบเปรียบเทียบราคาอัจฉริยะ</h1>
+          <p class="thai" style="color:var(--text-muted); margin-top: .5rem;">ค้นหาและแมปราคาจาก 20+ ซัพพลายเออร์ด้วยระบบ Fuzzy Search</p>
+        </div>
+
+        <div class="search-box-wrap">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" id="searchInput" class="compare-input thai" placeholder="พิมพ์ชื่อเกม หรือจำนวนคูปอง... (เช่น rov 1000)" autofocus>
+          <div class="flex gap-1 mt-1">
+            <span class="thai" style="font-size:.8rem; color:var(--text-dim);">ตัวอย่าง: "rov 1000", "free fire 500", "mlbb"</span>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-1">
+          <h2 class="thai" style="font-size: 1.2rem; font-weight: 700;">📊 ผลการเปรียบเทียบราคา</h2>
+          <div id="resultCount" class="thai" style="color:var(--text-dim); font-size: .9rem;"></div>
+        </div>
+
+        <div class="result-grid" id="resultGrid">
+          <!-- Mock results will appear here -->
+        </div>
+
+        <div id="emptyMsg" class="thai" style="padding: 4rem; text-align: center; color: var(--text-dim); display: none;">
+          <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">🔎</div>
+          <p>ไม่พบสินค้าที่คุณค้นหา ลองพิมพ์ด้วยคำอื่นดูนะครับ</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    // 1. MOCKED SUPPLIER DATA (20+ Sources)
+    const suppliers = [
+      "Codashop", "Midasbuy", "LnwTrue", "P2W TOPUP", "SEAGM", 
+      "Easycard", "Itemmania", "OverTopup", "INDEX Game", "GameGeek", 
+      "Gaming Nation", "Richman Shop", "WonDD", "Termgame", "LapakGaming", 
+      "Termcodegame", "TrueMoney", "WePAY", "Junebikoshop", "MT Topup", "Clever Pay"
+    ];
+
+    const mockPackages = [];
+    
+    // Generate Mock Data for demo
+    const games = [
+      { name: "Garena ROV", keys: ["rov", "coupons", "คูปอง"] },
+      { name: "Free Fire", keys: ["ff", "diamonds", "เพชร"] },
+      { name: "Mobile Legends", keys: ["mlbb", "diamonds", "เพชร"] }
+    ];
+
+    games.forEach(g => {
+      [100, 500, 1000, 2000].forEach(val => {
+        suppliers.forEach(sup => {
+          // Add some random variation in price and names
+          const price = (val * 0.9) + (Math.random() * (val * 0.15));
+          const bonus = Math.floor(Math.random() * (val * 0.1));
+          const rawNames = [
+            `${g.name} ${val} ${g.keys[1]}`,
+            `${val} + ${bonus} ${g.keys[2]} (${sup})`,
+            `เติมเกม ${g.name} ${val + bonus} ${g.keys[1]}`,
+            `Special: ${g.name} ${val} คุ้มสุดๆ`
+          ];
+          
+          mockPackages.push({
+            id: Math.random().toString(36).substr(2, 9),
+            supplier: sup,
+            name: rawNames[Math.floor(Math.random() * rawNames.length)],
+            game: g.name,
+            price: Math.floor(price),
+            originalVal: val,
+            bonus: bonus
+          });
+        });
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Store.init();
+      Store.requireAuth();
+      await loadComponent('headerSlot', '../components/header.html');
+      await loadComponent('sidebarSlot', '../components/sidebar.html');
+      
+      const input = document.getElementById('searchInput');
+      input.addEventListener('input', (e) => {
+        performSearch(e.target.value);
+      });
+
+      // Initial Search
+      performSearch("rov 1000");
+    });
+
+    function performSearch(query) {
+      if (!query || query.length < 2) {
+        document.getElementById('resultGrid').innerHTML = '';
+        document.getElementById('resultCount').textContent = 'รอรับคำค้นหา...';
+        return;
+      }
+
+      const options = {
+        keys: ['name', 'game'],
+        threshold: 0.4,
+        includeScore: true
+      };
+
+      const fuse = new Fuse(mockPackages, options);
+      const results = fuse.search(query);
+
+      // Sort results by price
+      const sorted = results
+        .map(r => ({ ...r.item, searchScore: r.score }))
+        .sort((a, b) => a.price - b.price);
+
+      renderResults(sorted);
+    }
+
+    function renderResults(list) {
+      const grid = document.getElementById('resultGrid');
+      const countEl = document.getElementById('resultCount');
+      const empty = document.getElementById('emptyMsg');
+
+      if (list.length === 0) {
+        grid.innerHTML = '';
+        empty.style.display = 'block';
+        countEl.textContent = 'พบ 0 รายการ';
+        return;
+      }
+
+      empty.style.display = 'none';
+      countEl.textContent = `พบ ${list.length} รายการ (เรียงตามราคาถูกที่สุด)`;
+
+      grid.innerHTML = list.map((item, index) => {
+        const isCheapest = index === 0;
+        return `
+          <div class="compare-card">
+            ${isCheapest ? '<div class="badge-cheapest thai">ถูกที่สุด!</div>' : ''}
+            <div class="flex items-center gap-1 mb-1">
+              <div class="sup-logo">${item.supplier[0]}</div>
+              <div>
+                <div style="font-size:.7rem; color:var(--text-dim); text-transform:uppercase;">${item.supplier}</div>
+                <div class="thai" style="font-size:.95rem; font-weight:700;">${item.name}</div>
+              </div>
+            </div>
+            
+            <div class="price-tag">฿${item.price.toLocaleString()}</div>
+            
+            <div class="filter-tags">
+              <span class="tag">${item.game}</span>
+              <span class="tag thai">โบนัส +${item.bonus}</span>
+            </div>
+
+            <div class="flex justify-between items-center mt-1">
+              <div class="fuzzy-score">Match Score: ${(1 - item.searchScore).toFixed(2)}</div>
+              <button class="btn btn-primary btn-sm thai" style="font-size:.7rem; padding:.4rem .8rem;">สั่งซื้อทันที</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
