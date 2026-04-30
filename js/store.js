@@ -221,8 +221,14 @@ const Store = {
         }
       }
 
+      // Safety cap for price/cost to prevent corrupted data overflow
+      const sellPrice = (Number(o.sellPrice) > 10000000) ? 0 : Number(o.sellPrice);
+      const cost = (Number(o.cost) > 10000000) ? 0 : Number(o.cost);
+
       return {
         ...o,
+        sellPrice,
+        cost,
         uid: o.customerId || o.uid || '-', // Defensive mapping
         gameName: game ? game.name : 'Unknown Game',
         pkgName: pkg ? pkg.name : 'Unknown Package',

@@ -6,7 +6,7 @@ async function loadComponent(slotId, path) {
   const el = document.getElementById(slotId);
   if (!el) return;
   try {
-    const r = await fetch(path);
+    const r = await fetch(path + '?v=' + Date.now());
     if (r.ok) {
       const html = await r.text();
       el.innerHTML = html;
