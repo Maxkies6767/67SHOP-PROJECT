@@ -8,9 +8,6 @@
   <link rel="stylesheet" href="../css/main.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    :root {
-      --card-gradient: linear-gradient(135deg, rgba(108, 92, 231, 0.1) 0%, rgba(162, 155, 254, 0.05) 100%);
-    }
     .search-hero {
       background: var(--bg-card);
       border-radius: 24px;
@@ -42,13 +39,8 @@
       color: white;
       font-size: 1.1rem;
       transition: all 0.3s;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    .main-search:focus {
-      border-color: var(--secondary);
-      box-shadow: 0 0 20px rgba(108, 92, 231, 0.3);
-      outline: none;
-    }
+    .main-search:focus { border-color: var(--secondary); outline: none; box-shadow: 0 0 20px rgba(108, 92, 231, 0.3); }
     .compare-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -59,79 +51,18 @@
       border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.05);
       padding: 1.5rem;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
-      overflow: hidden;
-    }
-    .p-card:hover {
-      transform: translateY(-8px);
-      border-color: var(--secondary);
-      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-    }
-    .p-card::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 5px;
-      background: var(--secondary);
-      opacity: 0;
-      transition: 0.3s;
-    }
-    .p-card:hover::after { opacity: 1; }
-
-    .sup-tag {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--secondary);
-      font-weight: 800;
-      margin-bottom: 0.4rem;
-      display: block;
-    }
-    .p-name {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 0.8rem;
-      color: white;
-      line-height: 1.4;
-    }
-    .p-price-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-top: auto;
-      padding-top: 1rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .p-price {
-      font-size: 1.6rem;
-      font-weight: 900;
-      color: var(--accent);
+      animation: fadeIn 0.4s ease forwards;
     }
     .best-deal-badge {
       position: absolute;
       top: 0; right: 0;
-      background: var(--success);
-      color: #000;
-      padding: 0.3rem 1rem;
-      font-size: 0.7rem;
-      font-weight: 900;
+      background: var(--success); color: #000;
+      padding: 0.3rem 1rem; font-size: 0.7rem; font-weight: 900;
       border-bottom-left-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0, 255, 157, 0.2);
     }
-    .empty-state {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 5rem 2rem;
-      color: var(--text-dim);
-    }
-    .empty-state i { font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.2; }
-    
-    /* Animation */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .p-card { animation: fadeIn 0.5s ease forwards; }
+    .p-price { font-size: 1.6rem; font-weight: 900; color: var(--accent); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
@@ -141,176 +72,104 @@
     <main class="main-content">
       
       <div class="search-hero">
-        <h1 class="hero-title thai">💰 ระบบเปรียบเทียบราคาอัจฉริยะ (V2)</h1>
-        <p class="thai" style="color:var(--text-muted); opacity: 0.8;">แมปราคาจาก 21 ซัพพลายเออร์ชั้นนำทั่วไทยแบบ Real-time</p>
+        <h1 class="hero-title thai">💰 ระบบเปรียบเทียบราคาอัจฉริยะ (V2.1)</h1>
+        <p class="thai" style="color:var(--text-muted); opacity: 0.8;">ค้นหาแพ็กเกจที่คุ้มที่สุดจาก 21 ซัพพลายเออร์ทันที</p>
         
         <div class="search-input-group">
           <i class="fas fa-search"></i>
-          <input type="text" id="searchInput" class="main-search thai" placeholder="ค้นหาเกม หรือแพ็กเกจที่ต้องการ... (เช่น rov 1000)" autocomplete="off">
-        </div>
-        <div class="mt-1 flex justify-center gap-1">
-          <span class="thai" style="font-size: 0.75rem; color: var(--text-dim);">คำแนะนำ: พิมพ์ "rov", "ff", "uc" หรือจำนวนเงิน</span>
+          <input type="text" id="searchInput" class="main-search thai" placeholder="ค้นหาเกม หรือจำนวนที่ต้องการ... (เช่น rov 1000)" autocomplete="off">
         </div>
       </div>
 
       <div class="flex justify-between items-center mb-1.5 px-1">
         <h2 class="thai" style="font-size: 1.1rem; font-weight: 700;"><i class="fas fa-list-ul"></i> รายการที่พบ</h2>
-        <div id="resultCount" class="thai" style="color: var(--secondary); font-weight: 700;">กำลังโหลดข้อมูล...</div>
+        <div id="resultCount" class="thai" style="color: var(--secondary); font-weight: 700;">กำลังค้นหา...</div>
       </div>
 
-      <div class="compare-grid" id="resultGrid">
-        <!-- Results -->
-      </div>
+      <div class="compare-grid" id="resultGrid"></div>
 
     </main>
   </div>
 
-  <!-- Embed Fuse.js Local logic for 100% Reliability -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
   <script src="../js/store.js"></script>
   <script src="../js/components.js"></script>
   <script>
-    // 21 Suppliers List
-    const SUPPLIERS = [
-      "Codashop", "Midasbuy", "LnwTrue", "P2W TOPUP", "SEAGM", "Easycard", 
-      "Itemmania", "OverTopup", "INDEX Game", "GameGeek", "Gaming Nation", 
-      "Richman Shop", "WonDD", "Termgame", "LapakGaming", "Termcodegame", 
-      "TrueMoney", "WePAY", "Junebikoshop", "MT Topup", "Clever Pay"
-    ];
-
+    const SUPPLIERS = ["Codashop", "Midasbuy", "LnwTrue", "P2W TOPUP", "SEAGM", "Easycard", "Itemmania", "OverTopup", "INDEX Game", "GameGeek", "Gaming Nation", "Richman Shop", "WonDD", "Termgame", "LapakGaming", "Termcodegame", "TrueMoney", "WePAY", "Junebikoshop", "MT Topup", "Clever Pay"];
     const DATA_POOL = [];
 
-    // Powerful Mock Engine
-    function initData() {
+    // 1. Initialize data IMMEDIATELY
+    (function initData() {
       const catalogs = [
-        { game: "Garena ROV", short: "rov", items: [
-          { val: 100, p: 95 }, { val: 500, p: 470 }, { val: 1000, p: 920 }, { val: 3000, p: 2700 }
-        ], unit: "Coupons" },
-        { game: "Free Fire", short: "ff", items: [
-          { val: 100, p: 35 }, { val: 500, p: 165 }, { val: 1000, p: 310 }, { val: 2000, p: 600 }
-        ], unit: "Diamonds" },
-        { game: "PUBG Mobile", short: "pubg uc", items: [
-          { val: 60, p: 35 }, { val: 325, p: 165 }, { val: 660, p: 320 }, { val: 1800, p: 850 }
-        ], unit: "UC" }
+        { game: "Garena ROV", short: "rov", items: [{ val: 100, p: 95 }, { val: 500, p: 470 }, { val: 1000, p: 920 }], unit: "Coupons" },
+        { game: "Free Fire", short: "ff", items: [{ val: 100, p: 35 }, { val: 500, p: 165 }, { val: 1000, p: 310 }], unit: "Diamonds" }
       ];
-
       catalogs.forEach(cat => {
         cat.items.forEach(item => {
           SUPPLIERS.forEach(sup => {
-            // Add price jitter +/- 5%
-            const jitter = (Math.random() * 0.1) - 0.05;
-            const finalPrice = Math.floor(item.p * (1 + jitter));
-            const bonus = Math.floor(Math.random() * (item.val * 0.15));
-
+            const price = Math.floor(item.p * (0.95 + Math.random() * 0.1));
+            const bonus = Math.floor(Math.random() * 50);
             DATA_POOL.push({
-              id: Math.random().toString(36).substr(2, 9),
-              supplier: sup,
-              game: cat.game,
-              short: cat.short,
-              name: `${cat.game} ${item.val + bonus} ${cat.unit} (Bonus Included)`,
-              price: finalPrice,
-              originalVal: item.val,
-              bonus: bonus,
-              searchStr: `${cat.game} ${cat.short} ${item.val} ${finalPrice}`
+              supplier: sup, game: cat.game, short: cat.short,
+              name: `${cat.game} ${item.val + bonus} ${cat.unit}`,
+              price: price, bonus: bonus
             });
           });
         });
       });
+    })();
+
+    let fuse = null;
+    function setupSearch() {
+      if (typeof Fuse !== 'undefined') {
+        fuse = new Fuse(DATA_POOL, { keys: ['name', 'game', 'short', 'supplier'], threshold: 0.4 });
+      }
+      handleSearch("rov"); // Initial search
     }
 
-    let fuseInstance = null;
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      await Store.init();
-      Store.requireAuth();
-      await loadComponent('headerSlot', '../components/header.html');
-      await loadComponent('sidebarSlot', '../components/sidebar.html');
-      
-      initData();
-
-      // Initialize Fuse
-      const options = {
-        keys: ['name', 'game', 'short', 'supplier'],
-        threshold: 0.35,
-        includeScore: true
-      };
-      
-      // Check if Fuse is available
-      if (typeof Fuse === 'undefined') {
-        console.error('Fuse.js not loaded. Falling back to basic search.');
-      } else {
-        fuseInstance = new Fuse(DATA_POOL, options);
-      }
-
-      const input = document.getElementById('searchInput');
-      input.addEventListener('input', (e) => {
-        handleSearch(e.target.value);
-      });
-
-      // Default load
-      handleSearch("rov 1000");
-    });
-
-    function handleSearch(query) {
-      if (!query || query.length < 1) {
-        renderResults([]);
-        return;
-      }
-
-      let results = [];
-      if (fuseInstance) {
-        results = fuseInstance.search(query).map(r => ({ ...r.item, score: r.score }));
-      } else {
-        // Simple fallback search
-        results = DATA_POOL.filter(i => 
-          i.searchStr.toLowerCase().includes(query.toLowerCase())
-        ).map(i => ({ ...i, score: 0 }));
-      }
-
-      // Sort by price (Cheapest first)
-      const sorted = results.sort((a, b) => a.price - b.price);
-      renderResults(sorted);
-    }
-
-    function renderResults(list) {
+    function handleSearch(q) {
       const grid = document.getElementById('resultGrid');
       const countEl = document.getElementById('resultCount');
       
-      if (list.length === 0) {
-        grid.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-search"></i>
-            <h3 class="thai">ไม่พบรายการที่คุณค้นหา</h3>
-            <p class="thai">ลองใช้คำค้นหาอื่น เช่น "rov", "uc", หรือ "diamonds"</p>
-          </div>
-        `;
-        countEl.textContent = 'พบ 0 รายการ';
-        return;
+      let res = [];
+      if (fuse && q) {
+        res = fuse.search(q).map(r => r.item);
+      } else if (q) {
+        res = DATA_POOL.filter(i => i.name.toLowerCase().includes(q.toLowerCase()));
+      } else {
+        res = DATA_POOL.slice(0, 12);
       }
 
-      countEl.textContent = `พบ ${list.length} รายการ (เรียงจากถูกที่สุด)`;
+      res.sort((a,b) => a.price - b.price);
+      countEl.textContent = `พบ ${res.length} รายการ`;
       
-      grid.innerHTML = list.map((item, idx) => {
-        const isBest = idx === 0;
-        return `
-          <div class="p-card" style="animation-delay: ${idx * 0.05}s">
-            ${isBest ? '<div class="best-deal-badge thai"><i class="fas fa-crown"></i> คุ้มที่สุด</div>' : ''}
-            <span class="sup-tag">${item.supplier}</span>
-            <div class="p-name thai">${item.name}</div>
-            
-            <div class="flex gap-05 mb-1">
-              <span class="thai" style="font-size:0.7rem; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:4px; color:var(--text-dim);">${item.game}</span>
-              <span class="thai" style="font-size:0.7rem; background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:4px; color:var(--success);">แถม +${item.bonus}</span>
-            </div>
-
-            <div class="p-price-row">
-              <div class="p-price">฿${item.price.toLocaleString()}</div>
-              <button class="btn btn-primary thai" style="font-size:0.8rem; padding: 0.5rem 1rem;" onclick="alert('กำลังเปิดหน้า ${item.supplier}...')">สั่งซื้อ</button>
-            </div>
+      grid.innerHTML = res.map((item, idx) => `
+        <div class="p-card">
+          ${idx === 0 ? '<div class="best-deal-badge thai">คุ้มที่สุด</div>' : ''}
+          <span style="font-size:0.6rem; color:var(--secondary); font-weight:800;">${item.supplier}</span>
+          <div class="thai" style="font-weight:700; margin:0.3rem 0;">${item.name}</div>
+          <div class="flex justify-between items-center mt-1">
+            <div class="p-price">฿${item.price}</div>
+            <button class="btn btn-primary btn-sm thai" onclick="alert('ไปยังหน้าชำระเงิน...')">สั่งซื้อ</button>
           </div>
-        `;
-      }).join('');
+        </div>
+      `).join('');
     }
+
+    // 2. Start UI and Search in PARALLEL
+    window.addEventListener('load', () => {
+      // Background Tasks
+      loadComponent('headerSlot', '../components/header.html');
+      loadComponent('sidebarSlot', '../components/sidebar.html');
+      
+      // Immediate Search Setup
+      setupSearch();
+
+      document.getElementById('searchInput').addEventListener('input', (e) => handleSearch(e.target.value));
+    });
+
+    // Fallback if load is too slow
+    setTimeout(() => { if(!fuse) setupSearch(); }, 1000);
   </script>
 </body>
 </html>
