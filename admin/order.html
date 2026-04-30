@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สร้างออเดอร์ — 67SHOP</title>
+  <link rel="icon" href="../assets/images/best logo.png">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+  <div id="headerSlot"></div>
+  <div class="admin-wrap">
+    <div id="sidebarSlot"></div>
+    <main class="main-content">
+      <h1 class="page-title"><i class="fas fa-plus-circle rotating"></i> สร้างออเดอร์ใหม่</h1>
+
+      <!-- Step 1: Channel -->
+      <div class="card mb-2">
+        <h2 class="thai mb-1" style="font-size:1rem;">1. ช่องทางลูกค้า</h2>
+        <div class="flex gap-2">
+          <button class="btn-channel btn-line thai" id="chLine" onclick="pickChannel('LINE')"><i class="fab fa-line"></i> LINE</button>
+          <button class="btn-channel btn-facebook thai" id="chFB" onclick="pickChannel('Facebook')"><i class="fab fa-facebook"></i> Facebook</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Game -->
+      <div class="card mb-2">
+        <h2 class="thai mb-1" style="font-size:1rem;">2. เลือกเกม</h2>
+        <div class="game-grid" id="gameGrid"></div>
+      </div>
+
+      <!-- Step 3: Package -->
+      <div class="card mb-2" id="pkgSection" style="opacity:.4;pointer-events:none;">
+        <h2 class="thai mb-1" style="font-size:1rem;">3. เลือกแพ็กเกจ</h2>
+        <div class="pkg-grid" id="pkgGrid"></div>
+      </div>
+
+      <!-- Step 4: Summary -->
+      <div class="card mb-2" id="summarySection" style="opacity:.4;pointer-events:none;">
+        <h2 class="thai mb-1" style="font-size:1rem;">4. สรุป & กรอก UID</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div>
+            <div class="form-group">
+              <label class="form-label">UID ลูกค้า</label>
+              <input type="text" id="inputUID" class="form-input" placeholder="กรอก UID ลูกค้า">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ราคาขาย (บาท)</label>
+              <input type="text" id="inputSellPrice" class="form-input" readonly>
+            </div>
+          </div>
+          <div>
+            <div class="card" style="background:var(--bg-deep);">
+              <p class="thai" style="font-size:.85rem;color:var(--text-muted);">Supplier ถูกสุด (อัตโนมัติ)</p>
+              <p class="thai" id="supName" style="font-weight:700;font-size:1.1rem;margin:.3rem 0;">-</p>
+              <p class="thai">ต้นทุน: <span id="supCost" style="color:var(--warning);font-weight:700;">-</span></p>
+              <p class="thai" style="margin-top:.4rem;">กำไร: <span id="supProfit" style="color:var(--secondary);font-weight:800;font-size:1.2rem;">-</span></p>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-success w-full thai mt-2" style="width:100%;padding:.9rem;font-size:1.05rem;" onclick="createOrder()">
+          Order 67
+        </button>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../js/store.js"></script>
+  <script src="../js/sound.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    let state = { channel: '', gameId: '', pkgId: '' };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      Store.requireAuth();
+      await loadComponent('headerSlot', '../components/header.html');
+      await loadComponent('sidebarSlot', '../components/sidebar.html');
+      renderGames();
+    });
+
+    function pickChannel(ch) {
+      state.channel = ch;
+      document.getElementById('chLine').classList.toggle('active', ch === 'LINE');
+      document.getElementById('chFB').classList.toggle('active', ch === 'Facebook');
+    }
+
+    function renderGames() {
+      const games = Store.getGames();
+      const grid = document.getElementById('gameGrid');
+      grid.innerHTML = games.map(g => `
+        <div class="card game-card" data-gid="${encodeURIComponent(g.id)}">
+          <img src="${g.icon}" alt="${g.name}">
+          <div class="name thai">${g.name}</div>
+        </div>
+      `).join('');
+      grid.querySelectorAll('.game-card').forEach(card => {
+        card.addEventListener('click', function() {
+          const id = decodeURIComponent(this.dataset.gid);
+          pickGame(id, this);
+        });
+      });
+    }
+
+    function pickGame(id, el) {
+      state.gameId = id;
+      state.pkgId = '';
+      document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+
+      const pkgs = Store.getPackagesByGame(id);
+      const sec = document.getElementById('pkgSection');
+      sec.style.opacity = '1'; sec.style.pointerEvents = 'auto';
+
+      const pkgGrid = document.getElementById('pkgGrid');
+      pkgGrid.innerHTML = pkgs.length === 0
+        ? '<p class="thai" style="color:var(--text-muted);">ยังไม่มีแพ็กเกจ — เพิ่มได้ที่ Config</p>'
+        : pkgs.map(p => {
+          const best = Store.getCheapestSupplier(p);
+          return `
+            <div class="card pkg-card" data-pid="${encodeURIComponent(p.id)}">
+              <div class="pkg-name">${p.name}</div>
+              <div class="pkg-price">฿${p.sellPrice}</div>
+              <div class="pkg-cost thai">ทุน ฿${best ? best.cost : '?'}</div>
+            </div>`;
+        }).join('');
+
+      pkgGrid.querySelectorAll('.pkg-card').forEach(card => {
+        card.addEventListener('click', function() {
+          const pid = decodeURIComponent(this.dataset.pid);
+          pickPkg(pid, this);
+        });
+      });
+
+      // Reset summary
+      document.getElementById('summarySection').style.opacity = '.4';
+      document.getElementById('summarySection').style.pointerEvents = 'none';
+    }
+
+    function pickPkg(id, el) {
+      state.pkgId = id;
+      document.querySelectorAll('.pkg-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+
+      const pkg = Store.getPackages().find(p => p.id === id);
+      const best = Store.getCheapestSupplier(pkg);
+
+      document.getElementById('inputSellPrice').value = '฿' + pkg.sellPrice;
+      document.getElementById('supName').textContent = best ? best.name : '-';
+      document.getElementById('supCost').textContent = best ? '฿' + best.cost : '-';
+      document.getElementById('supProfit').textContent = best ? '฿' + (pkg.sellPrice - best.cost) : '-';
+
+      const sec = document.getElementById('summarySection');
+      sec.style.opacity = '1'; sec.style.pointerEvents = 'auto';
+    }
+
+    function createOrder() {
+      const uid = document.getElementById('inputUID').value.trim();
+      if (!state.gameId) return alert('กรุณาเลือกเกม');
+      if (!state.pkgId) return alert('กรุณาเลือกแพ็กเกจ');
+      if (!uid) return alert('กรุณากรอก UID ลูกค้า');
+
+      const session = Store.getSession();
+      const game = Store.getGames().find(g => g.id === state.gameId);
+      const pkg = Store.getPackages().find(p => p.id === state.pkgId);
+      const best = Store.getCheapestSupplier(pkg);
+
+      Store.addOrder({
+        channel: state.channel || '-',
+        gameId: state.gameId,
+        gameName: game.name,
+        pkgId: state.pkgId,
+        pkgName: pkg.name,
+        uid,
+        sellPrice: pkg.sellPrice,
+        cost: best ? best.cost : 0,
+        supplierName: best ? best.name : '-',
+        supplierLink: best ? best.link : '',
+        createdBy: session ? session.name : 'unknown'
+      });
+
+      SFX.play('success');
+      // Redirect to Kanban INSTANTLY
+      window.location.href = './kanban.html';
+    }
+  </script>
+</body>
+</html>

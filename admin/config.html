@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ตั้งค่าระบบ — 67SHOP</title>
+  <link rel="icon" href="../assets/images/best logo.png">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+  <div id="headerSlot"></div>
+  <div class="admin-wrap">
+    <div id="sidebarSlot"></div>
+    <main class="main-content">
+      <h1 class="page-title"><i class="fas fa-cog" style="margin-right:.5rem; font-size:1.8rem; color:var(--text-muted);"></i> ตั้งค่าระบบ (Owner Only)</h1>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active thai" onclick="switchTab('admins')">👥 จัดการ Admin</button>
+        <button class="tab-btn thai" onclick="switchTab('games')">🎮 จัดการเกม</button>
+        <button class="tab-btn thai" onclick="switchTab('packages')">📦 จัดการแพ็กเกจ</button>
+      </div>
+
+      <!-- TAB: Admins -->
+      <div class="tab-panel active" id="tab-admins">
+        <div class="card mb-2">
+          <h3 class="thai mb-1">เพิ่ม Admin ใหม่</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:.8rem;align-items:end;">
+            <div class="form-group" style="margin:0;"><label class="form-label">ชื่อบุคคล</label><input id="newAdminName" class="form-input" placeholder="ชื่อ..." autocomplete="off"></div>
+            <div class="form-group" style="margin:0;"><label class="form-label">รหัสผ่าน</label><input id="newAdminPass" class="form-input" type="password" placeholder="รหัสผ่าน..." autocomplete="off"></div>
+            <button class="btn btn-primary thai" onclick="addAdmin()">+ เพิ่ม</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="thai mb-1">รายชื่อผู้ใช้ทั้งหมด</h3>
+          <div id="userList"></div>
+        </div>
+      </div>
+
+      <!-- TAB: Games -->
+      <div class="tab-panel" id="tab-games">
+        <div class="card mb-2">
+          <h3 class="thai mb-1">เพิ่มเกมใหม่</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:.8rem;align-items:end;">
+            <div class="form-group" style="margin:0;"><label class="form-label">ชื่อเกม</label><input id="newGameName" class="form-input" placeholder="ชื่อเกม..."></div>
+            <div class="form-group" style="margin:0;"><label class="form-label">URL รูปไอคอน</label><input id="newGameIcon" class="form-input" placeholder="https://... หรือ ../assets/images/..."></div>
+            <div style="display:flex;gap:.8rem;align-items:end;">
+              <button id="gameSubmitBtn" class="btn btn-primary thai" onclick="addGame()">+ เพิ่ม</button>
+              <button id="gameCancelBtn" class="btn btn-secondary thai" style="display:none;" onclick="cancelEditGame()">ยกเลิก</button>
+            </div>
+          </div>
+          <div class="flex gap-1 mt-1" style="font-size:0.75rem; color:var(--text-dim); align-items:center;">
+            <span class="thai"><i class="fas fa-lightbulb" style="color:var(--warning); margin-right:.3rem;"></i> ตัวช่วยหาชื่อ/ไอคอน:</span>
+            <a href="https://play.google.com/store/games" target="_blank" class="btn btn-secondary btn-sm thai" style="padding:.3rem .8rem; font-size:0.7rem; display:flex; align-items:center; gap:.4rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.05);">
+              <i class="fab fa-google-play"></i> Google Play
+            </a>
+            <a href="https://apps.apple.com/th/iphone/games?l=th" target="_blank" class="btn btn-secondary btn-sm thai" style="padding:.3rem .8rem; font-size:0.7rem; display:flex; align-items:center; gap:.4rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.05);">
+              <i class="fab fa-apple"></i> App Store
+            </a>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="thai mb-1">เกมทั้งหมด</h3>
+          <div id="gameList" class="game-grid"></div>
+        </div>
+      </div>
+
+      <!-- TAB: Packages -->
+      <div class="tab-panel" id="tab-packages">
+        <div class="card mb-2">
+          <h3 class="thai mb-1">เพิ่มแพ็กเกจใหม่</h3>
+          <div class="form-group">
+            <label class="form-label">เลือกเกม</label>
+            <select id="pkgGameSelect" class="form-select" onchange="onPkgGameChange()">
+              <option value="">-- เลือกเกม --</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="form-group"><label class="form-label">ชื่อแพ็กเกจ</label><input id="pkgName" class="form-input" placeholder="เช่น 100 เพชร"></div>
+            <div class="form-group"><label class="form-label">ราคาขายหน้าร้าน (บาท)</label><input id="pkgSellPrice" class="form-input" type="number" placeholder="33"></div>
+          </div>
+          <div id="supplierContainer"></div>
+          <button type="button" class="btn btn-secondary btn-sm thai mt-1" onclick="addSupplierSlot()" id="addSupBtn">+ เพิ่ม Supplier</button>
+
+          <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+            <button id="pkgSubmitBtn" class="btn btn-primary w-full thai" style="flex:1;" onclick="addPackage()">+ เพิ่มแพ็กเกจ</button>
+            <button id="pkgCancelBtn" class="btn btn-secondary w-full thai" style="flex:1;display:none;" onclick="cancelEditPkg()">ยกเลิกการแก้ไข</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="thai mb-1">แพ็กเกจทั้งหมด</h3>
+          <div id="pkgFilterBtns" class="flex gap-1 mb-1" style="flex-wrap:wrap;"></div>
+          <div id="packageList"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <h3 class="thai mb-1" id="modalTitle">ยืนยัน</h3>
+      <p class="thai mb-2" id="modalMsg" style="color:var(--text-muted);">ต้องการดำเนินการนี้หรือไม่?</p>
+      <div class="flex gap-1 justify-center">
+        <button class="btn btn-danger thai" id="modalConfirm">ยืนยัน</button>
+        <button class="btn btn-secondary thai" id="modalCancel">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div class="modal-overlay" id="passModalOverlay">
+    <div class="modal-box">
+      <h3 class="thai mb-1">แก้ไขข้อมูลผู้ใช้</h3>
+      <div id="editNameGroup" class="form-group mb-1">
+        <label class="thai" style="color:var(--text-dim);font-size:.75rem;margin-bottom:.3rem;display:block;">ชื่อผู้ใช้ (เฉพาะ Admin)</label>
+        <input type="text" id="editUserName" class="form-input" placeholder="ชื่อผู้ใช้..." autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="thai" style="color:var(--text-dim);font-size:.75rem;margin-bottom:.3rem;display:block;">รหัสผ่านใหม่</label>
+        <input type="text" id="newPassInput" class="form-input" placeholder="รหัสผ่านใหม่..." autocomplete="off">
+      </div>
+      <div class="flex gap-1 justify-center mt-2">
+        <button class="btn btn-primary thai" onclick="confirmChangePass()">บันทึก</button>
+        <button class="btn btn-secondary thai" onclick="closePassModal()">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/store.js"></script>
+  <script src="../js/sound.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    let editingPkgId = null;
+    let editingGameId = null;
+    let pkgFilterGame = '';
+    let supplierCount = 0;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      Store.requireAuth(['owner']);
+      await loadComponent('headerSlot', '../components/header.html');
+      await loadComponent('sidebarSlot', '../components/sidebar.html');
+      addSupplierSlot(); // Start with 1
+      renderAll();
+    });
+
+    function addSupplierSlot(data = null) {
+      if (supplierCount >= 10) return alert('จำกัดสูงสุด 10 เจ้า');
+      supplierCount++;
+      const id = supplierCount;
+      const div = document.createElement('div');
+      div.className = 'supplier-row';
+      div.id = `sup-row-${id}`;
+      div.style = 'display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:0.8rem; margin-bottom:0.8rem; align-items:end; animation: fadeIn 0.3s ease;';
+      div.innerHTML = `
+        <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:0.7rem; opacity:0.7;">ชื่อ Supplier ${id}</label><input class="form-input sup-name" placeholder="ชื่อ" value="${data ? data.name : ''}"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:0.7rem; opacity:0.7;">ต้นทุน (฿)</label><input class="form-input sup-cost" type="number" placeholder="0" value="${data ? data.cost : ''}"></div>
+        <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:0.7rem; opacity:0.7;">URL ลิงก์</label><input class="form-input sup-link" placeholder="https://..." value="${data ? data.link : ''}"></div>
+        ${id > 1 ? `<button class="btn btn-danger" style="padding:.5rem .8rem;" onclick="removeSupplierSlot(${id})">✕</button>` : '<div style="width:38px;"></div>'}
+      `;
+      document.getElementById('supplierContainer').appendChild(div);
+      updateAddSupBtn();
+    }
+
+    function removeSupplierSlot(id) {
+      const row = document.getElementById(`sup-row-${id}`);
+      if (row) {
+        row.remove();
+        supplierCount--;
+        // Re-calculate numbers
+        const rows = document.querySelectorAll('.supplier-row');
+        supplierCount = 0;
+        document.getElementById('supplierContainer').innerHTML = '';
+        rows.forEach(r => {
+          const name = r.querySelector('.sup-name').value;
+          const cost = r.querySelector('.sup-cost').value;
+          const link = r.querySelector('.sup-link').value;
+          addSupplierSlot({ name, cost, link });
+        });
+      }
+    }
+
+    function updateAddSupBtn() {
+      document.getElementById('addSupBtn').style.display = supplierCount >= 10 ? 'none' : 'block';
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', ['admins','games','packages'][i] === tab));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    function renderAll() { renderUsers(); renderGames(); renderPackages(); loadGameSelect(); }
+
+    // ── Admin Users ──
+    function renderUsers() {
+      const users = Store.getUsers();
+      document.getElementById('userList').innerHTML = users.map(u => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border);">
+          <div>
+            <span class="thai" style="font-weight:600;">${u.name}</span>
+            <span style="font-size:.75rem;background:${u.role==='owner'?'var(--accent)':'var(--primary)'};color:#fff;padding:.1rem .5rem;border-radius:99px;margin-left:.5rem;">${u.role}</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <div class="flex items-center gap-1" style="background:rgba(255,255,255,0.03);padding:.2rem .6rem;border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+              <span class="pass-text thai" style="color:var(--text-muted);font-size:.8rem;min-width:80px;">รหัส: ••••••••</span>
+              <button class="btn-icon" onclick="togglePassVisibility(this, '${u.password}')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:.9rem;padding:0 .2rem;">👁️</button>
+            </div>
+            <button class="btn btn-warning btn-sm" onclick="changePass('${u.name}')" style="padding:.2rem .6rem; font-size:.75rem; border-radius:6px; display:flex; align-items:center; gap:0.3rem;">
+              <i class="fas fa-pen" style="font-size:0.7rem;"></i> แก้ไข
+            </button>
+            ${u.role !== 'owner' ? `
+            <button class="btn btn-danger btn-sm thai" onclick="removeAdmin('${u.name}')" style="padding:.2rem .6rem; font-size:.75rem; border-radius:6px; display:flex; align-items:center; gap:0.3rem;">
+              <i class="fas fa-trash" style="font-size:0.7rem;"></i> ลบ
+            </button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function togglePassVisibility(btn, pass) {
+      const span = btn.parentElement.querySelector('.pass-text');
+      if (span.innerText.includes('•')) {
+        span.innerText = 'รหัส: ' + pass;
+        btn.innerText = '🔒';
+      } else {
+        span.innerText = 'รหัส: ••••••••';
+        btn.innerText = '👁️';
+      }
+    }
+
+    let targetUserForPass = '';
+    function changePass(name) {
+      targetUserForPass = name;
+      const users = Store.getUsers();
+      const u = users.find(x => x.name === name);
+      if (!u) return;
+
+      document.getElementById('editUserName').value = u.name;
+      document.getElementById('newPassInput').value = u.password;
+      
+      // Hide name edit for Owner
+      document.getElementById('editNameGroup').style.display = u.role === 'owner' ? 'none' : 'block';
+      
+      document.getElementById('passModalOverlay').classList.add('show');
+    }
+
+    function confirmChangePass() {
+      const newName = document.getElementById('editUserName').value.trim();
+      const newPass = document.getElementById('newPassInput').value.trim();
+      if (!newName || !newPass) return alert('กรุณากรอกข้อมูลให้ครบ');
+      
+      const users = Store.getUsers();
+      const idx = users.findIndex(u => u.name === targetUserForPass);
+      if (idx > -1) {
+        // Check if new name already exists (if name changed)
+        if (newName !== targetUserForPass && users.some(u => u.name === newName)) {
+          return alert('ชื่อนี้มีอยู่ในระบบแล้ว');
+        }
+        
+        users[idx].name = newName;
+        users[idx].password = newPass;
+        Store.saveUsers(users);
+        SFX.play('success');
+        closePassModal();
+        renderUsers();
+      }
+    }
+
+    function closePassModal() {
+      document.getElementById('passModalOverlay').classList.remove('show');
+    }
+
+    function addAdmin() {
+      const name = document.getElementById('newAdminName').value.trim();
+      const pass = document.getElementById('newAdminPass').value.trim();
+      if (!name || !pass) return alert('กรุณากรอกชื่อและรหัสผ่าน');
+      Store.addUser(name, pass, 'admin');
+      SFX.play('success');
+      document.getElementById('newAdminName').value = '';
+      document.getElementById('newAdminPass').value = '';
+      renderUsers();
+    }
+
+    function removeAdmin(name) {
+      showModal('ลบผู้ใช้', 'ลบ "' + name + '" ออกจากระบบ?', () => {
+        Store.removeUser(name);
+        renderUsers();
+      });
+    }
+
+    // ── Games ──
+    function renderGames() {
+      const games = Store.getGames();
+      const el = document.getElementById('gameList');
+      el.innerHTML = games.map(g => `
+        <div class="card" style="text-align:center;position:relative;padding-top:1.5rem;">
+          <div style="position:absolute;top:.5rem;right:.5rem;display:flex;gap:.4rem;">
+            <button class="btn btn-warning btn-sm edit-game-btn" style="padding:.3rem .5rem; font-size:.75rem; border-radius:6px; box-shadow:0 0 10px rgba(255,184,0,0.1);" data-gid="${encodeURIComponent(g.id)}">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-danger btn-sm del-game-btn" style="padding:.3rem .5rem; font-size:.75rem; border-radius:6px; box-shadow:0 0 10px rgba(239,71,111,0.1);" data-gid="${encodeURIComponent(g.id)}">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+          <img src="${g.icon}" alt="${g.name}" style="width:56px;height:56px;border-radius:10px;margin:0 auto .5rem;object-fit:cover;">
+          <div class="thai" style="font-size:.85rem;font-weight:600;">${g.name}</div>
+        </div>
+      `).join('');
+      el.querySelectorAll('.del-game-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const gid = decodeURIComponent(this.dataset.gid);
+          showModal('ลบเกม', 'ลบเกมนี้ออกจากระบบ?', () => { Store.removeGame(gid); renderGames(); loadGameSelect(); });
+        });
+      });
+      el.querySelectorAll('.edit-game-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const gid = decodeURIComponent(this.dataset.gid);
+          editGame(gid);
+        });
+      });
+    }
+
+    function editGame(id) {
+      const g = Store.getGames().find(x => x.id === id);
+      if (!g) return;
+      editingGameId = id;
+      document.getElementById('newGameName').value = g.name;
+      document.getElementById('newGameIcon').value = g.icon;
+      document.getElementById('gameSubmitBtn').innerText = '💾 บันทึก';
+      document.getElementById('gameCancelBtn').style.display = 'block';
+    }
+
+    function cancelEditGame() {
+      editingGameId = null;
+      document.getElementById('newGameName').value = '';
+      document.getElementById('newGameIcon').value = '';
+      document.getElementById('gameSubmitBtn').innerText = '+ เพิ่ม';
+      document.getElementById('gameCancelBtn').style.display = 'none';
+    }
+
+    function addGame() {
+      const name = document.getElementById('newGameName').value.trim();
+      const icon = document.getElementById('newGameIcon').value.trim() || '../assets/images/best logo.png';
+      if (!name) return alert('กรุณากรอกชื่อเกม');
+      
+      if (editingGameId) {
+        Store.updateGame(editingGameId, { name, icon });
+        SFX.play('success');
+        cancelEditGame();
+      } else {
+        Store.addGame({ id: name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(), name, icon });
+        SFX.play('success');
+        document.getElementById('newGameName').value = '';
+        document.getElementById('newGameIcon').value = '';
+      }
+      renderGames();
+      loadGameSelect();
+    }
+
+    // ── Packages ──
+    function loadGameSelect() {
+      const games = Store.getGames();
+      const sel = document.getElementById('pkgGameSelect');
+      sel.innerHTML = '<option value="">-- เลือกเกม --</option>' + games.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+      // Filter buttons
+      document.getElementById('pkgFilterBtns').innerHTML =
+        `<button class="btn btn-sm ${!pkgFilterGame?'btn-primary':'btn-secondary'} thai" onclick="filterPkg('')">ทั้งหมด</button>` +
+        games.map(g => `<button class="btn btn-sm ${pkgFilterGame===g.id?'btn-primary':'btn-secondary'} thai" onclick="filterPkg('${g.id}')">${g.name}</button>`).join('');
+    }
+
+    function onPkgGameChange() {}
+    function filterPkg(gid) { pkgFilterGame = gid; loadGameSelect(); renderPackages(); }
+
+    function renderPackages() {
+      let pkgs = Store.getPackages();
+      if (pkgFilterGame) pkgs = pkgs.filter(p => p.gameId === pkgFilterGame);
+      const games = Store.getGames();
+      const getGameName = id => { const g = games.find(x=>x.id===id); return g ? g.name : id; };
+
+      document.getElementById('packageList').innerHTML = pkgs.length === 0
+        ? '<p class="thai" style="color:var(--text-muted);">ยังไม่มีแพ็กเกจ</p>'
+        : pkgs.map(p => `
+          <div class="card mb-1" style="padding:1rem;">
+            <div class="flex justify-between items-center mb-1">
+              <div>
+                <span class="thai" style="font-weight:600;">${p.name}</span>
+                <span style="font-size:.75rem;background:var(--primary);color:#fff;padding:.1rem .5rem;border-radius:99px;margin-left:.5rem;">${getGameName(p.gameId)}</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="thai" style="color:var(--secondary);font-weight:700;margin-right:.5rem;">ขาย ฿${p.sellPrice}</span>
+                <button class="btn btn-success btn-sm" onclick="copyPkg('${p.id}')" title="คัดลอก" style="padding:.3rem .6rem; border-radius:6px; box-shadow:0 0 12px rgba(6,214,160,0.15);"><i class="fas fa-copy"></i></button>
+                <button class="btn btn-warning btn-sm" onclick="editPkg('${p.id}')" title="แก้ไข" style="padding:.3rem .6rem; border-radius:6px; box-shadow:0 0 12px rgba(255,184,0,0.15);"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="removePkg('${p.id}')" title="ลบ" style="padding:.3rem .6rem; border-radius:6px; box-shadow:0 0 12px rgba(239,71,111,0.15);"><i class="fas fa-trash-alt"></i></button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:.5rem;font-size:.8rem;">
+              ${(p.suppliers || []).map(s => `
+                <div style="background:var(--bg-deep);padding:.5rem;border-radius:6px;border:1px solid rgba(255,255,255,0.03);">
+                  <div class="thai" style="font-weight:600;display:flex;justify-content:space-between;">
+                    <span>${s.name}</span>
+                    <a href="${s.link}" target="_blank" style="color:var(--primary-light);font-size:0.7rem;">🔗</a>
+                  </div>
+                  <div style="color:var(--warning);">฿${s.cost}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+    }
+
+    function addPackage() {
+      const gameId = document.getElementById('pkgGameSelect').value;
+      const name = document.getElementById('pkgName').value.trim();
+      const sellPrice = parseInt(document.getElementById('pkgSellPrice').value) || 0;
+      if (!gameId || !name || !sellPrice) return alert('กรุณากรอกข้อมูลให้ครบ (เกม, ชื่อแพ็กเกจ, ราคาขาย)');
+
+      const suppliers = [];
+      document.querySelectorAll('.supplier-row').forEach(row => {
+        const sName = row.querySelector('.sup-name').value.trim();
+        const sCost = parseInt(row.querySelector('.sup-cost').value) || 0;
+        const sLink = row.querySelector('.sup-link').value.trim();
+        if (sName) suppliers.push({ name: sName, cost: sCost, link: sLink });
+      });
+
+      const pkgData = { gameId, name, sellPrice, suppliers };
+
+      if (editingPkgId) {
+        Store.updatePackage(editingPkgId, pkgData);
+        SFX.play('success');
+        cancelEditPkg();
+      } else {
+        Store.addPackage(pkgData);
+        SFX.play('success');
+        clearPkgForm();
+      }
+      renderPackages();
+    }
+
+    function editPkg(id) {
+      const p = Store.getPackages().find(x => x.id === id);
+      if (!p) return;
+      editingPkgId = id;
+      
+      document.getElementById('pkgGameSelect').value = p.gameId;
+      document.getElementById('pkgName').value = p.name;
+      document.getElementById('pkgSellPrice').value = p.sellPrice;
+      
+      // Clear and rebuild supplier slots
+      document.getElementById('supplierContainer').innerHTML = '';
+      supplierCount = 0;
+      if (p.suppliers && p.suppliers.length > 0) {
+        p.suppliers.forEach(s => addSupplierSlot(s));
+      } else {
+        addSupplierSlot();
+      }
+
+      document.getElementById('pkgSubmitBtn').innerText = '💾 บันทึกการแก้ไข';
+      document.getElementById('pkgCancelBtn').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function copyPkg(id) {
+      const p = Store.getPackages().find(x => x.id === id);
+      if (!p) return;
+      const newPkg = { ...p, name: p.name + ' (สำเนา)' };
+      delete newPkg.id; // Store.addPackage will generate a new ID
+      Store.addPackage(newPkg);
+      SFX.play('success');
+      renderPackages();
+    }
+
+    function cancelEditPkg() {
+      editingPkgId = null;
+      clearPkgForm();
+      document.getElementById('pkgSubmitBtn').innerText = '+ เพิ่มแพ็กเกจ';
+      document.getElementById('pkgCancelBtn').style.display = 'none';
+    }
+
+    function clearPkgForm() {
+      document.getElementById('pkgName').value = '';
+      document.getElementById('pkgSellPrice').value = '';
+      document.getElementById('supplierContainer').innerHTML = '';
+      supplierCount = 0;
+      addSupplierSlot();
+    }
+
+    function removePkg(id) {
+      showModal('ลบแพ็กเกจ', 'ลบแพ็กเกจนี้?', () => { Store.removePackage(id); renderPackages(); });
+    }
+  </script>
+</body>
+</html>

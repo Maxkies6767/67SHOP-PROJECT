@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — 67SHOP</title>
+  <link rel="icon" href="../assets/images/best logo.png">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+  <div id="headerSlot"></div>
+  <div class="admin-wrap">
+    <div id="sidebarSlot"></div>
+    <main class="main-content">
+
+      <!-- Hero -->
+      <div class="hero-banner">
+        <h1 class="hero-title">67 Shop</h1>
+        <p class="thai" style="color:var(--text-muted);margin-top:.5rem;margin-bottom:1.5rem;position:relative;z-index:1;font-size:1rem;">⚡จกเห็ดขี่โคยย⚡</p>
+        <div class="flex gap-1" style="position:relative;z-index:1;">
+          <a href="./order.html" class="btn btn-primary thai" style="font-size:.95rem;padding:.7rem 1.5rem;"><i class="fas fa-plus-circle"></i> สร้างออเดอร์</a>
+          <a href="./kanban.html" class="btn btn-secondary thai" style="font-size:.95rem;padding:.7rem 1.5rem;"><i class="fas fa-columns"></i> Kanban Board</a>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid"></div>
+
+      <!-- Orders -->
+      <div class="card" style="overflow:hidden;">
+        <div class="flex justify-between items-center mb-1">
+          <h2 class="thai" style="font-size:1.1rem;font-weight:700;">📋 ออเดอร์ล่าสุด</h2>
+          <span style="font-size:.72rem;color:var(--secondary);display:flex;align-items:center;gap:.3rem;"><span style="width:6px;height:6px;background:var(--secondary);border-radius:50%;display:inline-block;animation:pulse-glow 2s infinite;"></span> Real-time updates</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="orderTable">
+            <thead>
+              <tr>
+                <th class="thai">Order ID</th><th class="thai">เกม</th><th class="thai">แพ็กเกจ</th>
+                <th>UID</th><th class="thai">ราคาขาย</th><th class="thai">ต้นทุน</th>
+                <th class="thai">กำไร</th><th class="thai">ผู้รับงาน</th><th class="thai">ผู้ส่งงาน</th><th class="thai">สถานะ</th><th class="thai">วัน/เวลา</th>
+              </tr>
+            </thead>
+            <tbody id="orderBody"></tbody>
+          </table>
+        </div>
+        <div id="emptyMsg" class="thai hidden" style="padding:2rem;text-align:center;color:var(--text-dim);">📭 ยังไม่มีออเดอร์</div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Shared Modal UI -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <h3 class="thai mb-1" id="modalTitle">ยืนยัน</h3>
+      <p class="thai mb-2" id="modalMsg" style="color:var(--text-muted);">ต้องการดำเนินการนี้หรือไม่?</p>
+      <div class="flex gap-1 justify-center">
+        <button class="btn btn-danger thai" id="modalConfirm">ยืนยัน</button>
+        <button class="btn btn-secondary thai" id="modalCancel">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/store.js"></script>
+  <script src="../js/sound.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      Store.requireAuth();
+      await loadComponent('headerSlot', '../components/header.html');
+      await loadComponent('sidebarSlot', '../components/sidebar.html');
+      render();
+    });
+
+    function render() {
+      const s = Store.getStats();
+      document.getElementById('statsGrid').innerHTML = `
+        <div class="card stat-card" style="border-top:3px solid var(--secondary);">
+          <div class="icon" style="color:var(--secondary); font-size: 1.6rem; margin-bottom: 0.5rem;"><i class="fas fa-wallet"></i></div>
+          <div class="value" style="color:var(--secondary);">฿${s.totalRevenue.toLocaleString()}</div>
+          <div class="label thai" style="margin-top:.4rem;">REVENUE วันนี้</div>
+        </div>
+        <div class="card stat-card" style="border-top:3px solid var(--primary);">
+          <div class="icon" style="color:var(--primary-light); font-size: 1.6rem; margin-bottom: 0.5rem;"><i class="fas fa-shopping-basket"></i></div>
+          <div class="value" style="color:var(--primary-light);">${s.totalOrders}</div>
+          <div class="label thai" style="margin-top:.4rem;">ออเดอร์ทั้งหมด</div>
+        </div>
+        <div class="card stat-card" style="border-top:3px solid var(--accent);">
+          <div class="icon" style="color:var(--accent); font-size: 1.6rem; margin-bottom: 0.5rem;"><i class="fas fa-coins"></i></div>
+          <div class="value" style="color:var(--accent);">฿${s.totalProfit.toLocaleString()}</div>
+          <div class="label thai" style="margin-top:.4rem;">กำไรรวม</div>
+        </div>
+        <div class="card stat-card" style="border-top:3px solid var(--warning);">
+          <div class="icon" style="color:var(--warning); font-size: 1.6rem; margin-bottom: 0.5rem;"><i class="fas fa-hourglass-half"></i></div>
+          <div class="value" style="color:var(--warning);">${s.pendingOrders + s.processingOrders}</div>
+          <div class="label thai" style="margin-top:.4rem;">รอดำเนินการ</div>
+        </div>
+      `;
+
+      const orders = Store.getOrders().slice(0, 20);
+      const tbody = document.getElementById('orderBody');
+      const emptyMsg = document.getElementById('emptyMsg');
+
+      if (orders.length === 0) { tbody.innerHTML = ''; emptyMsg.classList.remove('hidden'); return; }
+      emptyMsg.classList.add('hidden');
+
+      tbody.innerHTML = orders.map(o => {
+        const profit = (o.sellPrice||0) - (o.cost||0);
+        const date = o.createdAt ? new Date(o.createdAt).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '-';
+        const time = o.createdAt ? new Date(o.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}) : '-';
+        const st = {
+          pending:'<span class="status-badge status-pending thai">รอ</span>',
+          processing:'<span class="status-badge status-processing thai">กำลังเติม</span>',
+          completed:'<span class="status-badge status-completed thai">สำเร็จ</span>'
+        };
+        return `<tr>
+          <td>
+            <div class="cell-id-wrap">
+              <div style="color:var(--primary-light);font-weight:700;">${o.id}</div>
+              <div style="font-size:.65rem;color:var(--text-dim);" class="thai">โดย: ${o.createdBy||'-'}</div>
+            </div>
+          </td>
+          <td class="thai">${o.gameName||'-'}</td>
+          <td class="thai">${o.pkgName||'-'}</td>
+          <td><span class="cell-uid">${o.uid||'-'}</span></td>
+          <td style="font-weight:600;">฿${(o.sellPrice||0).toLocaleString()}</td>
+          <td style="color:var(--text-muted);font-size:.8rem;">฿${(o.cost||0).toLocaleString()}</td>
+          <td>
+            <span class="cell-profit-hidden" onclick="toggleProfit(this, '${profit.toLocaleString()}')">ดูยอดกำไร</span>
+          </td>
+          <td class="cell-staff-accepted thai" style="font-size:.8rem;">${o.acceptedBy || '-'}</td>
+          <td class="cell-staff-completed thai" style="font-size:.8rem;">${o.completedBy || '-'}</td>
+          <td>${st[o.status]||o.status}</td>
+          <td style="color:var(--text-dim);font-size:.75rem;line-height:1.2;">
+            <div>${date}</div>
+            <div style="opacity:.7;">${time}</div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function editOrder(id) {
+      const orders = Store.getOrders();
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+
+      const newAccepted = prompt("แก้ไข ผู้รับงาน:", o.acceptedBy || "");
+      if (newAccepted === null) return;
+      const newCompleted = prompt("แก้ไข ผู้ส่งงาน:", o.completedBy || "");
+      if (newCompleted === null) return;
+      
+      o.acceptedBy = newAccepted;
+      o.completedBy = newCompleted;
+      
+      Store.saveOrders(orders);
+      render();
+    }
+
+    function deleteOrder(id) {
+      showModal('ลบออเดอร์', 'ต้องการลบออเดอร์ ' + id + ' หรือไม่?', () => {
+        Store.removeOrder(id);
+        render();
+      });
+    }
+  </script>
+</body>
+</html>

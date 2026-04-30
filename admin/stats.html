@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สถิติรายได้ — 67SHOP</title>
+  <link rel="icon" href="../assets/images/best logo.png">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+  <div id="headerSlot"></div>
+  <div class="admin-wrap">
+    <div id="sidebarSlot"></div>
+    <main class="main-content">
+
+      <div class="hero-banner">
+        <h1 class="hero-title" style="font-size:2rem;">📈 สถิติรายได้</h1>
+        <p class="thai" style="color:var(--text-muted);margin-top:.4rem;position:relative;z-index:1;">ข้อมูลรายได้ ต้นทุน กำไร — เฉพาะ Owner เท่านั้น</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-bottom:1.8rem;" id="statsGrid"></div>
+
+      <div class="card mb-2">
+        <h2 class="thai mb-1" style="font-size:1.05rem;font-weight:700;">📊 กำไรแยกตามเกม</h2>
+        <div id="gameProfits"></div>
+      </div>
+
+      <div class="card mb-2">
+        <h2 class="thai mb-1" style="font-size:1.05rem;font-weight:700;">👤 สถิติรายบุคคล (ทีมงาน)</h2>
+        <div id="staffStats" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:1rem;"></div>
+      </div>
+
+      <div class="card" style="overflow:hidden;">
+        <div class="flex justify-between items-center mb-1">
+          <h2 class="thai" style="font-size:1.05rem;font-weight:700;">📜 ประวัติออเดอร์ (เสร็จสิ้น)</h2>
+          <div class="flex items-center gap-1">
+            <span id="completedCount" style="font-size:.72rem;color:var(--secondary);margin-right:.5rem;"></span>
+            <button class="btn btn-danger btn-sm thai" onclick="clearAllHistory()" style="padding:.3rem .8rem;font-size:.75rem;display:flex;align-items:center;gap:.3rem;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+              ลบทั้งหมด
+            </button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr>
+              <th class="thai">Order ID</th><th class="thai">เกม</th><th class="thai">แพ็กเกจ</th><th>UID</th>
+              <th class="thai">ราคาขาย</th><th class="thai">ต้นทุน</th><th class="thai">กำไร</th>
+              <th class="thai">ผู้รับงาน</th><th class="thai">ผู้ส่งงาน</th><th class="thai">สถานะ</th><th class="thai">วัน/เวลา</th><th class="thai">จัดการ</th>
+            </tr></thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+        <div id="emptyMsg" class="thai hidden" style="padding:2rem;text-align:center;color:var(--text-dim);">📭 ยังไม่มีออเดอร์เสร็จสิ้น</div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <h3 class="thai mb-1" id="modalTitle">ยืนยัน</h3>
+      <p class="thai mb-2" id="modalMsg" style="color:var(--text-muted);">ต้องการดำเนินการนี้หรือไม่?</p>
+      <div class="flex gap-1 justify-center">
+        <button class="btn btn-danger thai" id="modalConfirm">ยืนยัน</button>
+        <button class="btn btn-secondary thai" id="modalCancel">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/store.js"></script>
+  <script src="../js/sound.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      Store.requireAuth(['owner']);
+      await loadComponent('headerSlot', '../components/header.html');
+      await loadComponent('sidebarSlot', '../components/sidebar.html');
+      render();
+    });
+
+    function render() {
+      const s = Store.getStats();
+      const orders = Store.getOrders();
+      const completed = orders.filter(o => o.status === 'completed');
+
+      document.getElementById('statsGrid').innerHTML = `
+        <div class="card stat-card" style="border-top:3px solid var(--secondary);">
+          <div class="icon" style="color:var(--secondary);"><i class="fas fa-wallet"></i></div>
+          <div class="value" style="color:var(--secondary);font-size:2rem;">฿${s.totalRevenue.toLocaleString()}</div>
+          <div class="label thai" style="margin-top:.4rem;">รายได้รวม</div>
+        </div>
+        <div class="card stat-card" style="border-top:3px solid var(--warning);">
+          <div class="icon" style="color:var(--warning);"><i class="fas fa-box"></i></div>
+          <div class="value" style="color:var(--warning);font-size:2rem;">฿${s.totalCost.toLocaleString()}</div>
+          <div class="label thai" style="margin-top:.4rem;">ต้นทุนรวม</div>
+        </div>
+        <div class="card stat-card" style="border-top:3px solid var(--accent);">
+          <div class="icon" style="color:var(--accent);"><i class="fas fa-fire"></i></div>
+          <div class="value" style="color:var(--accent);font-size:2rem;">฿${s.totalProfit.toLocaleString()}</div>
+          <div class="label thai" style="margin-top:.4rem;">กำไรสุทธิ</div>
+        </div>
+        <div class="card stat-card" style="border-top:3px solid var(--primary);">
+          <div class="icon" style="color:var(--primary-light);"><i class="fas fa-check-circle"></i></div>
+          <div class="value" style="color:var(--primary-light);font-size:2rem;">${s.completedOrders}</div>
+          <div class="label thai" style="margin-top:.4rem;">ออเดอร์สำเร็จ</div>
+        </div>
+      `;
+
+      // Profit by game
+      const byGame = {};
+      completed.forEach(o => {
+        const key = o.gameName || 'ไม่ระบุ';
+        if (!byGame[key]) byGame[key] = { revenue:0, cost:0, count:0 };
+        byGame[key].revenue += (o.sellPrice||0);
+        byGame[key].cost += (o.cost||0);
+        byGame[key].count++;
+      });
+
+      const gp = document.getElementById('gameProfits');
+      const entries = Object.entries(byGame);
+      if (entries.length === 0) {
+        gp.innerHTML = '<p class="thai" style="color:var(--text-dim);">ยังไม่มีข้อมูล</p>';
+      } else {
+        const maxP = Math.max(...entries.map(([,v]) => v.revenue - v.cost), 1);
+        gp.innerHTML = entries.map(([name, d]) => {
+          const p = d.revenue - d.cost;
+          const pct = (p / maxP) * 100;
+          return `<div style="margin-bottom:1.2rem;">
+            <div class="flex justify-between thai" style="font-size:.9rem;margin-bottom:.4rem;">
+              <span>${name} <span style="color:var(--text-dim);">(${d.count} ออเดอร์)</span></span>
+              <span style="color:var(--secondary);font-weight:800;">+฿${p.toLocaleString()}</span>
+            </div>
+            <div style="background:rgba(8,8,20,.6);border-radius:8px;height:12px;overflow:hidden;border:1px solid rgba(139,92,246,.06);">
+              <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:8px;transition:width .8s ease;box-shadow:0 0 12px var(--secondary-glow);"></div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      // Staff Stats
+      const staff = Store.getStaffStats();
+      const users = Store.getUsers();
+      const ss = document.getElementById('staffStats');
+      if (Object.keys(staff).length === 0) {
+        ss.innerHTML = '<p class="thai" style="color:var(--text-dim);padding:1rem;">ยังไม่มีข้อมูลทีมงาน</p>';
+      } else {
+        ss.innerHTML = Object.entries(staff).map(([name, d]) => {
+          const user = users.find(u => u.name === name);
+          const avatarUrl = user?.avatarUrl || `https://ui-avatars.com/api/?name=${name}&background=6D5BFF&color=fff`;
+          
+          return `
+            <div class="card staff-card-premium">
+              <div class="staff-header">
+                <div class="staff-avatar" style="overflow:hidden; border:2px solid var(--primary-light);">
+                  <img src="${avatarUrl}" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <div class="thai" style="font-weight:800; color:var(--primary-light); font-size:1rem;">${user?.displayName || name}</div>
+              </div>
+              <div class="staff-body">
+                <div class="staff-stat-row">
+                  <span class="label thai">สร้างออเดอร์:</span>
+                  <span class="value">${d.created}</span>
+                </div>
+                <div class="staff-stat-row secondary">
+                  <span class="label thai">รับงาน (UID):</span>
+                  <span class="value">${d.accepted}</span>
+                </div>
+                <div class="staff-stat-row success">
+                  <span class="label thai">ปิดงาน (สำเร็จ):</span>
+                  <span class="value">${d.completed}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // History table
+      document.getElementById('completedCount').textContent = completed.length + ' รายการ';
+      const tbody = document.getElementById('historyBody');
+      const emptyMsg = document.getElementById('emptyMsg');
+      if (completed.length === 0) { tbody.innerHTML = ''; emptyMsg.classList.remove('hidden'); return; }
+      emptyMsg.classList.add('hidden');
+
+      tbody.innerHTML = completed.map(o => {
+        const profit = (o.sellPrice||0) - (o.cost||0);
+        const date = o.createdAt ? new Date(o.createdAt).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '-';
+        const time = o.createdAt ? new Date(o.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}) : '-';
+        const st = {
+          pending:'<span class="status-badge status-pending thai">รอ</span>',
+          processing:'<span class="status-badge status-processing thai">กำลังเติม</span>',
+          completed:'<span class="status-badge status-completed thai">สำเร็จ</span>'
+        };
+        return `<tr>
+          <td>
+            <div class="cell-id-wrap">
+              <div style="color:var(--primary-light);font-weight:700;">${o.id}</div>
+              <div style="font-size:.65rem;color:var(--text-dim);" class="thai">โดย: ${o.createdBy||'-'}</div>
+            </div>
+          </td>
+          <td class="thai">${o.gameName||'-'}</td><td class="thai">${o.pkgName||'-'}</td>
+          <td><span class="cell-uid">${o.uid||'-'}</span></td>
+          <td style="font-weight:600;">฿${(o.sellPrice||0).toLocaleString()}</td>
+          <td style="color:var(--text-muted);font-size:.8rem;">฿${(o.cost||0).toLocaleString()}</td>
+          <td style="font-weight:700; color:var(--secondary);">
+            ฿${profit.toLocaleString()}
+          </td>
+          <td class="cell-staff-accepted thai" style="font-size:.8rem;">${o.acceptedBy || '-'}</td>
+          <td class="cell-staff-completed thai" style="font-size:.8rem;">${o.completedBy || '-'}</td>
+          <td>${st[o.status]||o.status}</td>
+          <td style="color:var(--text-dim);font-size:.75rem;line-height:1.2;">
+            <div>${date}</div>
+            <div style="opacity:.7;">${time}</div>
+          </td>
+          <td>
+            <div class="flex gap-1 justify-center">
+              <button class="trash-btn" style="color:var(--secondary-light); background:rgba(139,92,246,0.1);" onclick="editOrder('${o.id}')" title="แก้ไข">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="trash-btn" onclick="deleteOrder('${o.id}')" title="ลบออเดอร์">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+    function editOrder(id) {
+      const orders = Store.getOrders();
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+
+      const newAccepted = prompt("แก้ไข ผู้รับงาน:", o.acceptedBy || "");
+      if (newAccepted === null) return;
+      const newCompleted = prompt("แก้ไข ผู้ส่งงาน:", o.completedBy || "");
+      if (newCompleted === null) return;
+      
+      o.acceptedBy = newAccepted;
+      o.completedBy = newCompleted;
+      
+      Store.saveOrders(orders);
+      render();
+    }
+
+    function deleteOrder(id) {
+      showModal('ลบออเดอร์', 'ต้องการลบประวัติออเดอร์ ' + id + ' หรือไม่?', () => {
+        Store.removeOrder(id);
+        render();
+      });
+    }
+
+    function clearAllHistory() {
+      showModal('ลบทั้งหมด', 'ต้องการลบประวัติออเดอร์ "ทั้งหมด" ใช่หรือไม่? (ไม่สามารถกู้คืนได้)', () => {
+        const orders = Store.getOrders().filter(o => o.status !== 'completed');
+        Store.saveOrders(orders);
+        render();
+      });
+    }
+  </script>
+</body>
+</html>
