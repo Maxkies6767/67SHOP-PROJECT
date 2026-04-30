@@ -205,7 +205,27 @@ const Store = {
   },
 
   // ── Orders ──
-  getOrders() { return this._cache.orders; },
+  getOrders() { 
+    return this._cache.orders.map(o => {
+      const game = this._cache.games.find(g => g.id === o.gameId);
+      const pkg = this._cache.packages.find(p => p.id === o.pkgId);
+      
+      // Find supplier name by cost matching (fallback if not found)
+      let supplierName = 'Unknown';
+      if (pkg && pkg.suppliers) {
+        const s = pkg.suppliers.find(sup => Number(sup.cost) === Number(o.cost));
+        if (s) supplierName = s.name;
+      }
+
+      return {
+        ...o,
+        uid: o.customerId, // Map database customer_id to UI uid
+        gameName: game ? game.name : 'Unknown Game',
+        pkgName: pkg ? pkg.name : 'Unknown Package',
+        supplierName
+      };
+    });
+  },
   async addOrder(o) {
     const dbOrder = {
       id: 'ORD-' + String(Date.now()).slice(-6),
