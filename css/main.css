@@ -464,9 +464,9 @@ input:focus{border-color:rgba(139,92,246,0.4);box-shadow:0 0 10px rgba(139,92,24
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* ══ GAME GRID ══ */
-.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(5100px,1fr));gap:10rem}
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:2.5rem}
 .game-card{
-  cursor:pointer;text-align:center;padding:1.1rem .5rem;
+  cursor:pointer;text-align:center;padding:1.5rem;
   transition:all .35s ease;border:1.5px solid transparent!important;
 }
 .game-card:hover{
@@ -479,7 +479,7 @@ input:focus{border-color:rgba(139,92,246,0.4);box-shadow:0 0 10px rgba(139,92,24
   background:rgba(139,92,246,.06);
 }
 .game-card img{
-  width:75px;height:75px;margin:0 auto .8rem;border-radius:18px;object-fit:cover;
+  margin:0 auto .8rem;border-radius:18px;object-fit:cover;
   border:2px solid rgba(255,255,255,.06);transition:all .35s;
 }
 .game-card:hover img{transform:scale(1.1);border-color:rgba(139,92,246,.3)}
