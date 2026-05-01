@@ -114,14 +114,14 @@
 
                     // 2. เลือกเกม
                     React.createElement('div', { className: 'card mb-6 p-6' }, [
-                        React.createElement('div', { className: 'game-grid' }, games.map((game) => (
+                        React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-4 md:gap-6' }, games.map((game) => (
                             React.createElement('div', {
                                 key: game.id,
                                 onClick: () => handleGameClick(game),
                                 className: `game-card flex flex-col items-center justify-center cursor-pointer rounded-2xl border border-transparent hover:border-[#8b5cf6] transition-all duration-300 p-2`
                             }, [
-                                React.createElement('img', { src: game.icon, className: 'w-[90px] h-[90px] rounded-2xl mb-2 object-cover border border-white/10 shadow-sm' }),
-                                React.createElement('div', { className: 'text-[13px] font-bold text-white/80 text-center leading-tight' }, game.name)
+                                React.createElement('img', { src: game.icon, className: 'w-full max-w-[120px] aspect-square rounded-2xl mb-2 object-cover border border-white/10 shadow-sm' }),
+                                React.createElement('div', { className: 'text-[12px] md:text-[14px] font-bold text-white/80 text-center leading-tight' }, game.name)
                             ])
                         )))
                     ]),
