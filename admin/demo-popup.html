@@ -112,15 +112,6 @@
                 React.createElement('main', { className: 'main-content max-w-7xl mx-auto', key: 'main' }, [
                     React.createElement('h1', { className: 'page-title text-white font-bold text-2xl mb-8 mt-4' }, 'สร้างออเดอร์ใหม่'),
 
-                    // 1. ช่องทางลูกค้า
-                    React.createElement('div', { className: 'card mb-6 p-6' }, [
-                        React.createElement('h3', { className: 'text-center text-[12px] font-bold text-white/60 mb-4 uppercase' }, '1. ช่องทางลูกค้า'),
-                        React.createElement('div', { className: 'grid grid-cols-2 gap-4' }, [
-                            React.createElement('button', { className: 'btn-channel btn-line active py-4' }, [React.createElement('i', { className: 'fab fa-line text-2xl mb-1' }), 'LINE']),
-                            React.createElement('button', { className: 'btn-channel btn-facebook py-4' }, [React.createElement('i', { className: 'fab fa-facebook text-2xl mb-1' }), 'Facebook'])
-                        ])
-                    ]),
-
                     // 2. เลือกเกม
                     React.createElement('div', { className: 'card mb-6 p-6' }, [
                         React.createElement('h3', { className: 'text-center text-[12px] font-bold text-white/60 mb-6 uppercase' }, '2. เลือกเกม'),
@@ -128,43 +119,13 @@
                             React.createElement('div', {
                                 key: game.id,
                                 onClick: () => handleGameClick(game),
-                                className: `game-card flex flex-col items-center justify-center`
+                                className: `game-card flex flex-col items-center justify-center cursor-pointer rounded-2xl border border-transparent hover:border-[#8b5cf6] transition-all duration-300 p-2`
                             }, [
                                 React.createElement('img', { src: game.icon, className: 'w-16 h-16 rounded-2xl mb-2 object-cover border border-white/10' }),
                                 React.createElement('div', { className: 'text-[11px] font-bold text-white/80 text-center leading-tight' }, game.name)
                             ])
                         )))
                     ]),
-
-                    // 3. เลือกแพ็กเกจ (Empty Background State)
-                    React.createElement('div', { className: 'card mb-6 p-6 min-h-[120px] flex items-center justify-center' }, [
-                        React.createElement('h3', { className: 'text-[12px] font-bold text-white/60 uppercase m-0' }, '3. เลือกแพ็กเกจ')
-                    ]),
-
-                    // 4. สรุป & กรอก UID (Empty Background State)
-                    React.createElement('div', { className: 'card p-8 mb-10' }, [
-                        React.createElement('h3', { className: 'text-center text-[12px] font-bold text-white/60 mb-6 uppercase' }, '4. สรุป & กรอก UID'),
-                        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-8' }, [
-                            React.createElement('div', { className: 'space-y-4' }, [
-                                React.createElement('div', null, [
-                                    React.createElement('label', { className: 'form-label text-[11px]' }, 'UID ลูกค้า'),
-                                    React.createElement('input', { className: 'form-input bg-black/40', disabled: true, placeholder: 'กรอก UID ลูกค้า' })
-                                ]),
-                                React.createElement('div', null, [
-                                    React.createElement('label', { className: 'form-label text-[11px]' }, 'ราคาขาย (บาท)'),
-                                    React.createElement('input', { className: 'form-input bg-black/40', disabled: true })
-                                ])
-                            ]),
-                            React.createElement('div', { className: 'bg-black/20 border border-white/5 rounded-xl p-6 text-[12px]' }, [
-                                React.createElement('div', { className: 'text-white/60 font-bold mb-1' }, 'Supplier ถูกสุด (อัตโนมัติ)'),
-                                React.createElement('div', { className: 'text-white/40 mb-4' }, '-'),
-                                React.createElement('div', { className: 'flex items-center gap-2 mb-2' }, [React.createElement('span', { className: 'text-white/40' }, 'ต้นทุน:'), React.createElement('span', { className: 'text-[#f59e0b] font-bold' }, '-')]),
-                                React.createElement('div', { className: 'flex items-center gap-2' }, [React.createElement('span', { className: 'text-white/40' }, 'กำไร:'), React.createElement('span', { className: 'text-[#10b981] font-bold' }, '-')])
-                            ])
-                        ]),
-                        React.createElement('button', { className: 'btn btn-success w-full py-4 mt-8 text-lg font-bold opacity-80 cursor-not-allowed' }, 'Order 67')
-                    ])
-                ]),
 
                 // Popup Component
                 React.createElement(TopupPopup, {
