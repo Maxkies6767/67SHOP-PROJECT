@@ -464,7 +464,7 @@ input:focus{border-color:rgba(139,92,246,0.4);box-shadow:0 0 10px rgba(139,92,24
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* ══ GAME GRID ══ */
-.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1.2rem}
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.5rem}
 .game-card{
   cursor:pointer;text-align:center;padding:1.1rem .5rem;
   transition:all .35s ease;border:1.5px solid transparent!important;
