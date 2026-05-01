@@ -15,7 +15,7 @@
 html{scroll-behavior:smooth}
 
 body{
-  font-family:'Kanit',sans-serif;background:var(--bg-body);color:var(--text);
+  background:var(--bg-body);color:var(--text);
   min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;
 }
 
