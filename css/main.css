@@ -481,7 +481,7 @@ input:focus{border-color:rgba(139,92,246,0.4);box-shadow:0 0 10px rgba(139,92,24
 }
 .game-card img{
   width:100%;height:auto;margin:0 auto .6rem;border-radius:15px;object-fit:cover;
-  border:1px solid rgba(255,255,255,.06);transition:all .35s;
+  border:none;transition:all .35s;
 }
 .game-card:hover img{transform:scale(1.1);border-color:rgba(139,92,246,.3)}
 .game-card.selected img{border-color:var(--primary);box-shadow:0 0 15px var(--primary-glow)}
