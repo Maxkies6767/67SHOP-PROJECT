@@ -118,10 +118,10 @@
                             React.createElement('div', {
                                 key: game.id,
                                 onClick: () => handleGameClick(game),
-                                className: `flex flex-col items-center justify-start cursor-pointer transition-all duration-300 hover:scale-105 h-full`
+                                className: `game-card`
                             }, [
-                                React.createElement('img', { src: game.icon, className: 'w-full max-w-[120px] aspect-square rounded-2xl object-cover mb-2' }),
-                                React.createElement('div', { className: 'text-[13px] font-bold text-white/80 text-center leading-tight' }, game.name)
+                                React.createElement('img', { src: game.icon, className: 'w-full max-w-[120px] aspect-square rounded-2xl object-cover' }),
+                                React.createElement('div', { className: 'name' }, game.name)
                             ])
                         )))
                     ]),

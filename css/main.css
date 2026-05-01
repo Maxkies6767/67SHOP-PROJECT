@@ -535,6 +535,7 @@ input:focus{border-color:rgba(139,92,246,0.4);box-shadow:0 0 10px rgba(139,92,24
   cursor:pointer;text-align:center;padding:0;
   transition:all .35s ease;border:none!important;
   display:flex;flex-direction:column;align-items:center;
+  justify-content: flex-start; /* Ensure everything starts from top */
 }
 .game-card:hover{
   transform:translateY(-4px);border-color:var(--border-hover)!important;
@@ -546,12 +547,19 @@ input:focus{border-color:rgba(139,92,246,0.4);box-shadow:0 0 10px rgba(139,92,24
   background:rgba(139,92,246,.04);
 }
 .game-card img{
-  width:100%;height:auto;margin:0 auto .6rem;border-radius:15px;object-fit:cover;
+  width:100%; aspect-ratio: 1/1; /* Force square */
+  margin:0 auto .6rem;border-radius:15px;object-fit:cover;
   border:none;transition:all .35s;
 }
 .game-card:hover img{transform:scale(1.1);border-color:rgba(139,92,246,.3)}
 .game-card.selected img{border-color:var(--primary);box-shadow:0 0 15px var(--primary-glow)}
-.game-card .name{font-size:.92rem;font-weight:600;color:var(--text);line-height:1.3}
+.game-card .name{
+  font-size:.85rem;font-weight:700;color:rgba(255,255,255,0.85);
+  line-height:1.2; text-align:center;
+  min-height: 2.4em; /* Always take 2 lines worth of space */
+  display: flex; align-items: flex-start; justify-content: center;
+  word-break: break-word; overflow: hidden;
+}
 
 .pkg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.2rem}
 .pkg-card{
