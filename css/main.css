@@ -900,6 +900,14 @@ input:focus{border-color:rgba(139,92,246,0.4);box-shadow:0 0 10px rgba(139,92,24
   color: white;
   box-shadow: 0 0 15px var(--primary-glow);
 }
+
+/* Game Edit Card (Config) */
+.game-edit-card:hover {
+  border-color: var(--primary) !important;
+  transform: translateY(-5px);
+  background: rgba(139, 92, 246, 0.05) !important;
+  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.1);
+}
 .staff-stat-row {
   display: flex;
   justify-content: space-between;

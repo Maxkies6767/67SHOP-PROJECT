@@ -292,33 +292,25 @@
       const games = Store.getGames();
       const el = document.getElementById('gameList');
       el.innerHTML = games.map(g => `
-        <div class="card" style="text-align:center;position:relative;padding-top:1.5rem;">
-          <div style="position:absolute;top:.5rem;right:.5rem;display:flex;gap:.4rem;">
-            <button class="btn btn-warning btn-sm edit-game-btn" style="padding:.3rem .5rem; font-size:.75rem; border-radius:6px; box-shadow:0 0 10px rgba(255,184,0,0.1);" data-gid="${encodeURIComponent(g.id)}">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-danger btn-sm del-game-btn" style="padding:.3rem .5rem; font-size:.75rem; border-radius:6px; box-shadow:0 0 10px rgba(239,71,111,0.1);" data-gid="${encodeURIComponent(g.id)}">
+        <div class="card game-edit-card" style="text-align:center;position:relative;padding-top:1.5rem; cursor:pointer; transition:all 0.2s ease;" onclick="editGame('${g.id}')">
+          <div style="position:absolute;top:.5rem;right:.5rem;z-index:2;">
+            <button class="btn btn-danger btn-sm del-game-btn" style="padding:.3rem .5rem; font-size:.75rem; border-radius:6px; box-shadow:0 0 10px rgba(239,71,111,0.1);" data-gid="${encodeURIComponent(g.id)}" onclick="event.stopPropagation()">
               <i class="fas fa-trash-alt"></i>
             </button>
           </div>
-          <img src="${g.icon}" alt="${g.name}" style="width:56px;height:56px;border-radius:10px;margin:0 auto .5rem;object-fit:cover;">
-          <div class="thai" style="font-size:.85rem;font-weight:600;">${g.name}</div>
+          <img src="${g.icon}" alt="${g.name}" style="width:56px;height:56px;border-radius:10px;margin:0 auto .5rem;object-fit:cover; pointer-events:none;">
+          <div class="thai" style="font-size:.85rem;font-weight:600;pointer-events:none;">${g.name}</div>
         </div>
       `).join('');
       el.querySelectorAll('.del-game-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
           const gid = decodeURIComponent(this.dataset.gid);
           showModal('ลบเกม', 'ลบเกมนี้ออกจากระบบ?', async () => { 
             await Store.removeGame(gid); 
             renderGames(); 
             loadGameSelect(); 
           });
-        });
-      });
-      el.querySelectorAll('.edit-game-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const gid = decodeURIComponent(this.dataset.gid);
-          editGame(gid);
         });
       });
     }
