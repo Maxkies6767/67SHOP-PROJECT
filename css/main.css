@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..900&family=Kanit:wght@300..900&family=Outfit:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..900&family=Outfit:wght@100..900&display=swap');
 
 :root {
   --primary:#8b5cf6;--primary-light:#a78bfa;--primary-deep:#6d28d9;
@@ -40,7 +40,7 @@ body::after{
   66%{transform:translate(-30px,80px) scale(.95)}
 }
 
-.thai{font-family:'Kanit',sans-serif}
+.thai{font-family:'Inter',sans-serif}
 a{color:var(--primary-light);text-decoration:none;transition:color .2s}
 a:hover{color:#fff}
 img{max-width:100%;display:block}
@@ -197,7 +197,7 @@ img{max-width:100%;display:block}
 
 /* ══ PAGE TITLES ══ */
 .page-title{
-  font-family:'Kanit',sans-serif;
+  font-family:inherit;
   font-size:2rem;font-weight:900;margin-bottom:2.2rem;
   display:flex;align-items:center;justify-content:center;gap:.7rem;
   background:linear-gradient(to bottom, #ffffff 0%, #e0e0e0 45%, #a0a0b0 100%);
@@ -214,7 +214,7 @@ img{max-width:100%;display:block}
   position:relative;overflow:hidden;
 }
 .hero-banner .hero-title{
-  font-family:'Kanit',sans-serif;
+  font-family:inherit;
   font-size:3.8rem;font-weight:900;letter-spacing:-0.04em;
   background:linear-gradient(to bottom, #ffffff 0%, #d1d5db 50%, #9ca3af 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
@@ -561,7 +561,7 @@ input:focus{border-color:rgba(139,92,246,0.4);box-shadow:0 0 10px rgba(139,92,24
   border-collapse: separate;
   border-spacing: 0;
   font-size: .85rem;
-  font-family: 'Kanit', sans-serif;
+  font-family: inherit;
 }
 .data-table thead th {
   padding: 1rem .75rem;
