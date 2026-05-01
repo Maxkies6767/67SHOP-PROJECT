@@ -53,13 +53,13 @@
             ]),
             // 2. เลือกเกม
             React.createElement('div', { className: 'card mb-6 p-6', key: 'step2' }, [
-                React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-4 md:gap-6' }, games.length === 0 ? 
+                React.createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-4 md:gap-6 items-start' }, games.length === 0 ? 
                     React.createElement('div', { className: 'text-center col-span-full text-white/40' }, 'กำลังโหลดข้อมูลเกม...') :
                     games.map((game) => (
                     React.createElement('div', {
                         key: game.id,
                         onClick: () => handleGameClick(game),
-                        className: `flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:scale-105`
+                        className: `flex flex-col items-center justify-start cursor-pointer transition-all duration-300 hover:scale-105 h-full`
                     }, [
                         React.createElement('img', { src: game.icon, className: 'w-full max-w-[120px] aspect-square rounded-2xl object-cover mb-2' }),
                         React.createElement('div', { className: 'text-[13px] font-bold text-white/80 text-center leading-tight' }, game.name)
