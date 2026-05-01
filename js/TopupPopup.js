@@ -2,7 +2,6 @@
  * TopupPopup Component (V4 - Official Theme)
  * Perfectly synced with 67SHOP official CSS variables and styling.
  */
-function TopupPopup({ isOpen, onClose, game, packages = [], allSupplierPackages = [], onOrder }) {
 function TopupPopup({ isOpen, onClose, game, packages = [], onOrder }) {
   const [selectedPkg, setSelectedPkg] = React.useState(null);
   const [uid, setUid] = React.useState('');
