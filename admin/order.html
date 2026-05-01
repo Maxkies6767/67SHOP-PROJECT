@@ -53,7 +53,6 @@
             ]),
             // 2. เลือกเกม
             React.createElement('div', { className: 'card mb-6 p-6', key: 'step2' }, [
-                React.createElement('h3', { className: 'text-center text-[12px] font-bold text-white/60 mb-6 uppercase' }, '2. เลือกเกม'),
                 React.createElement('div', { className: 'game-grid' }, games.length === 0 ? 
                     React.createElement('div', { className: 'text-center col-span-full text-white/40' }, 'กำลังโหลดข้อมูลเกม...') :
                     games.map((game) => (
