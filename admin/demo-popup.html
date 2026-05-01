@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>67SHOP - Premium Purple Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <style>
+        body {
+            background-color: var(--bg-body);
+            color: var(--text);
+            font-family: 'Kanit', sans-serif;
+        }
+        .demo-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div id="root"></div>
+
+    <!-- Load TopupPopup Component -->
+    <script src="../js/TopupPopup.js"></script>
+
+    <script>
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [isPopupOpen, setIsPopupOpen] = useState(false);
+            const [selectedGame, setSelectedGame] = useState(null);
+            const [packages, setPackages] = useState([]);
+
+            const games = [
+                { id: 'ff', name: 'Free Fire', icon: '../assets/images/icon_freefire.png' },
+                { id: 'wwm', name: 'Where Winds Meet', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=wwm' },
+                { id: 'pubg', name: 'PUBG MOBILE', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=pubg' },
+                { id: 'wuwa', name: 'Wuthering Waves', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=wuwa' },
+                { id: 'tft', name: 'Teamfight Tactics', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=tft' },
+                { id: 'kuroko', name: "Kuroko's Basketball", icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=kuroko' },
+                { id: 'mu3', name: 'MU Origin 3', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=mu3' },
+                { id: 'genshin', name: 'Genshin Impact', icon: '../assets/images/icon_genshin.png' },
+                { id: 'hsr', name: 'Honkai: Star Rail', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=hsr' },
+                { id: 'mlbb', name: 'Mobile Legends', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=mlbb' },
+                { id: 'bleach', name: 'BLEACH', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=bleach' },
+                { id: 'haikyu', name: 'HAIKYU!!', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=haikyu' },
+                { id: 'rov', name: 'Garena ROV', icon: '../assets/images/icon_rov.png' },
+                { id: 'valorant', name: 'Valorant', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=valorant' },
+                { id: 'zzz', name: 'Zenless Zone Zero', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=zzz' },
+                { id: 'once', name: 'Once Human', icon: 'https://api.dicebear.com/7.x/identicon/svg?seed=once' },
+            ];
+
+            const mockPackages = {
+                'rov': [
+                    { id: 'rov-1', name: '100 Coupons' },
+                    { id: 'rov-2', name: '500 Coupons' },
+                ],
+                'ff': [
+                    { id: 'ff-1', name: '100 Diamonds' },
+                ]
+            };
+
+            const supplierPackages = [
+                { supplier: 'Codashop', name: 'ROV 100 Coupons', cost: 89 },
+                { supplier: 'INDEX Game', name: 'ROV 100 Coupons', cost: 83 },
+                { supplier: 'Clever Pay', name: 'ROV 100 Coupons', cost: 82 },
+            ];
+
+            const handleGameClick = (game) => {
+                setSelectedGame(game);
+                setPackages(mockPackages[game.id] || [
+                    { id: 'p1', name: 'Standard Pack A' },
+                    { id: 'p2', name: 'Premium Pack B' },
+                ]);
+                setIsPopupOpen(true);
+            };
+
+            return React.createElement('div', { className: 'admin-wrap' }, [
+                // === TOP HEADER ===
+                React.createElement('header', { className: 'top-header', key: 'header' }, [
+                    React.createElement('div', { className: 'logo' }, [
+                        React.createElement('img', { src: '../assets/images/best logo.png', style: { height: '35px' } }),
+                        React.createElement('div', { className: 'logo-text', style: { fontSize: '1.2rem' } }, '67SHOP'),
+                        React.createElement('span', { className: 'logo-sub' }, 'Admin Panel')
+                    ]),
+                    React.createElement('nav', { className: 'top-nav' }, [
+                        React.createElement('a', { href: '#', className: 'nav-link' }, [React.createElement('i', { className: 'fas fa-chart-pie' }), ' DASHBOARD']),
+                        React.createElement('a', { href: '#', className: 'nav-link active' }, [React.createElement('i', { className: 'fas fa-plus' }), ' สร้างออเดอร์']),
+                        React.createElement('a', { href: '#', className: 'nav-link' }, [React.createElement('i', { className: 'fas fa-columns' }), ' KANBAN BOARD']),
+                        React.createElement('a', { href: '#', className: 'nav-link' }, [React.createElement('i', { className: 'fas fa-search' }), ' เปรียบเทียบราคา']),
+                        React.createElement('a', { href: '#', className: 'nav-link' }, [React.createElement('i', { className: 'fas fa-chart-line' }), ' สถิติ']),
+                        React.createElement('a', { href: '#', className: 'nav-link' }, [React.createElement('i', { className: 'fas fa-cog' }), ' ตั้งค่า'])
+                    ]),
+                    React.createElement('div', { className: 'user-info' }, [
+                        React.createElement('div', { className: 'user-badge' }, [
+                            React.createElement('img', { src: 'https://api.dicebear.com/7.x/identicon/svg?seed=owner', className: 'w-6 h-6 rounded-full' }),
+                            React.createElement('span', null, 'Owner'),
+                            React.createElement('div', { className: 'role-tag', style: { background: 'linear-gradient(180deg, #F59E0B, #D97706)' } }, 'OWNER')
+                        ]),
+                        React.createElement('button', { className: 'btn-logout' }, 'ออกจากระบบ')
+                    ])
+                ]),
+
+                // === MAIN CONTENT ===
+                React.createElement('main', { className: 'main-content max-w-7xl mx-auto', key: 'main' }, [
+                    React.createElement('h1', { className: 'page-title text-white font-bold text-2xl mb-8 mt-4' }, 'สร้างออเดอร์ใหม่'),
+
+                    // 1. ช่องทางลูกค้า
+                    React.createElement('div', { className: 'card mb-6 p-6' }, [
+                        React.createElement('h3', { className: 'text-center text-[12px] font-bold text-white/60 mb-4 uppercase' }, '1. ช่องทางลูกค้า'),
+                        React.createElement('div', { className: 'grid grid-cols-2 gap-4' }, [
+                            React.createElement('button', { className: 'btn-channel btn-line active py-4' }, [React.createElement('i', { className: 'fab fa-line text-2xl mb-1' }), 'LINE']),
+                            React.createElement('button', { className: 'btn-channel btn-facebook py-4' }, [React.createElement('i', { className: 'fab fa-facebook text-2xl mb-1' }), 'Facebook'])
+                        ])
+                    ]),
+
+                    // 2. เลือกเกม
+                    React.createElement('div', { className: 'card mb-6 p-6' }, [
+                        React.createElement('h3', { className: 'text-center text-[12px] font-bold text-white/60 mb-6 uppercase' }, '2. เลือกเกม'),
+                        React.createElement('div', { className: 'game-grid' }, games.map((game) => (
+                            React.createElement('div', {
+                                key: game.id,
+                                onClick: () => handleGameClick(game),
+                                className: `game-card flex flex-col items-center justify-center`
+                            }, [
+                                React.createElement('img', { src: game.icon, className: 'w-16 h-16 rounded-2xl mb-2 object-cover border border-white/10' }),
+                                React.createElement('div', { className: 'text-[11px] font-bold text-white/80 text-center leading-tight' }, game.name)
+                            ])
+                        )))
+                    ]),
+
+                    // 3. เลือกแพ็กเกจ (Empty Background State)
+                    React.createElement('div', { className: 'card mb-6 p-6 min-h-[120px] flex items-center justify-center' }, [
+                        React.createElement('h3', { className: 'text-[12px] font-bold text-white/60 uppercase m-0' }, '3. เลือกแพ็กเกจ')
+                    ]),
+
+                    // 4. สรุป & กรอก UID (Empty Background State)
+                    React.createElement('div', { className: 'card p-8 mb-10' }, [
+                        React.createElement('h3', { className: 'text-center text-[12px] font-bold text-white/60 mb-6 uppercase' }, '4. สรุป & กรอก UID'),
+                        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-8' }, [
+                            React.createElement('div', { className: 'space-y-4' }, [
+                                React.createElement('div', null, [
+                                    React.createElement('label', { className: 'form-label text-[11px]' }, 'UID ลูกค้า'),
+                                    React.createElement('input', { className: 'form-input bg-black/40', disabled: true, placeholder: 'กรอก UID ลูกค้า' })
+                                ]),
+                                React.createElement('div', null, [
+                                    React.createElement('label', { className: 'form-label text-[11px]' }, 'ราคาขาย (บาท)'),
+                                    React.createElement('input', { className: 'form-input bg-black/40', disabled: true })
+                                ])
+                            ]),
+                            React.createElement('div', { className: 'bg-black/20 border border-white/5 rounded-xl p-6 text-[12px]' }, [
+                                React.createElement('div', { className: 'text-white/60 font-bold mb-1' }, 'Supplier ถูกสุด (อัตโนมัติ)'),
+                                React.createElement('div', { className: 'text-white/40 mb-4' }, '-'),
+                                React.createElement('div', { className: 'flex items-center gap-2 mb-2' }, [React.createElement('span', { className: 'text-white/40' }, 'ต้นทุน:'), React.createElement('span', { className: 'text-[#f59e0b] font-bold' }, '-')]),
+                                React.createElement('div', { className: 'flex items-center gap-2' }, [React.createElement('span', { className: 'text-white/40' }, 'กำไร:'), React.createElement('span', { className: 'text-[#10b981] font-bold' }, '-')])
+                            ])
+                        ]),
+                        React.createElement('button', { className: 'btn btn-success w-full py-4 mt-8 text-lg font-bold opacity-80 cursor-not-allowed' }, 'Order 67')
+                    ])
+                ]),
+
+                // Popup Component
+                React.createElement(TopupPopup, {
+                    key: 'popup',
+                    isOpen: isPopupOpen,
+                    onClose: () => setIsPopupOpen(false),
+                    game: selectedGame,
+                    packages: packages,
+                    allSupplierPackages: supplierPackages,
+                    onOrder: (data) => {
+                        console.log('Order Data:', data);
+                        alert(`สั่งซื้อสำเร็จ!\nเกม: ${selectedGame.name}\nแพ็กเกจ: ${data.selectedPkg.name}\nUID: ${data.uid}\nราคาสุทธิ: ฿${data.totalPrice}`);
+                        setIsPopupOpen(false);
+                    }
+                })
+            ]);
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>

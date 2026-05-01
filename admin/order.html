@@ -6,187 +6,154 @@
   <title>สร้างออเดอร์ — 67SHOP</title>
   <link rel="icon" href="../assets/images/best logo.png">
   <link rel="stylesheet" href="../css/main.css">
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
   <div id="headerSlot"></div>
   <div class="admin-wrap">
     <div id="sidebarSlot"></div>
-    <main class="main-content">
-      <h1 class="page-title"><i class="fas fa-plus-circle rotating"></i> สร้างออเดอร์ใหม่</h1>
-
-      <!-- Step 1: Channel -->
-      <div class="card mb-2">
-        <h2 class="thai mb-1" style="font-size:1rem;">1. ช่องทางลูกค้า</h2>
-        <div class="flex gap-2">
-          <button class="btn-channel btn-line thai" id="chLine" onclick="pickChannel('LINE')"><i class="fab fa-line"></i> LINE</button>
-          <button class="btn-channel btn-facebook thai" id="chFB" onclick="pickChannel('Facebook')"><i class="fab fa-facebook"></i> Facebook</button>
-        </div>
-      </div>
-
-      <!-- Step 2: Game -->
-      <div class="card mb-2">
-        <h2 class="thai mb-1" style="font-size:1rem;">2. เลือกเกม</h2>
-        <div class="game-grid" id="gameGrid"></div>
-      </div>
-
-      <!-- Step 3: Package -->
-      <div class="card mb-2" id="pkgSection" style="opacity:.4;pointer-events:none;">
-        <h2 class="thai mb-1" style="font-size:1rem;">3. เลือกแพ็กเกจ</h2>
-        <div class="pkg-grid" id="pkgGrid"></div>
-      </div>
-
-      <!-- Step 4: Summary -->
-      <div class="card mb-2" id="summarySection" style="opacity:.4;pointer-events:none;">
-        <h2 class="thai mb-1" style="font-size:1rem;">4. สรุป & กรอก UID</h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-          <div>
-            <div class="form-group">
-              <label class="form-label">UID ลูกค้า</label>
-              <input type="text" id="inputUID" class="form-input" placeholder="กรอก UID ลูกค้า">
-            </div>
-            <div class="form-group">
-              <label class="form-label">ราคาขาย (บาท)</label>
-              <input type="text" id="inputSellPrice" class="form-input" readonly>
-            </div>
-          </div>
-          <div>
-            <div class="card" style="background:var(--bg-deep);">
-              <p class="thai" style="font-size:.85rem;color:var(--text-muted);">Supplier ถูกสุด (อัตโนมัติ)</p>
-              <p class="thai" id="supName" style="font-weight:700;font-size:1.1rem;margin:.3rem 0;">-</p>
-              <p class="thai">ต้นทุน: <span id="supCost" style="color:var(--warning);font-weight:700;">-</span></p>
-              <p class="thai" style="margin-top:.4rem;">กำไร: <span id="supProfit" style="color:var(--secondary);font-weight:800;font-size:1.2rem;">-</span></p>
-            </div>
-          </div>
-        </div>
-
-        <button class="btn btn-success w-full thai mt-2" style="width:100%;padding:.9rem;font-size:1.05rem;" onclick="createOrder()">
-          Order 67
-        </button>
-      </div>
-
-    </main>
+    <main class="main-content" id="reactRoot"></main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="../js/store.js"></script>
   <script src="../js/sound.js"></script>
   <script src="../js/components.js"></script>
+  <script src="../js/TopupPopup.js"></script>
+  
   <script>
-    let state = { channel: '', gameId: '', pkgId: '' };
+    const { useState, useEffect } = React;
+
+    const OrderApp = () => {
+        const [isPopupOpen, setIsPopupOpen] = useState(false);
+        const [selectedGame, setSelectedGame] = useState(null);
+        const [packages, setPackages] = useState([]);
+        const [games, setGames] = useState([]);
+        const [channel, setChannel] = useState('LINE');
+
+        useEffect(() => {
+            const loadData = () => setGames(Store.getGames());
+            loadData();
+            Store.subscribe(loadData);
+        }, []);
+
+        const handleGameClick = (game) => {
+            setSelectedGame(game);
+            const gamePackages = Store.getPackagesByGame(game.id);
+            setPackages(gamePackages);
+            setIsPopupOpen(true);
+        };
+
+        return React.createElement(React.Fragment, null, [
+            React.createElement('h1', { className: 'page-title text-white font-bold text-2xl mb-8 mt-4', key: 'title' }, [
+                React.createElement('i', { className: 'fas fa-plus-circle rotating mr-2' }),
+                ' สร้างออเดอร์ใหม่'
+            ]),
+
+            // 1. ช่องทางลูกค้า
+            React.createElement('div', { className: 'card mb-6 p-6', key: 'step1' }, [
+                React.createElement('h3', { className: 'text-center text-[12px] font-bold text-white/60 mb-4 uppercase' }, '1. ช่องทางลูกค้า'),
+                React.createElement('div', { className: 'grid grid-cols-2 gap-4' }, [
+                    React.createElement('button', { 
+                        className: `btn-channel btn-line py-4 ${channel === 'LINE' ? 'active' : ''}`,
+                        onClick: () => setChannel('LINE')
+                    }, [React.createElement('i', { className: 'fab fa-line text-2xl mb-1' }), 'LINE']),
+                    React.createElement('button', { 
+                        className: `btn-channel btn-facebook py-4 ${channel === 'Facebook' ? 'active' : ''}`,
+                        onClick: () => setChannel('Facebook')
+                    }, [React.createElement('i', { className: 'fab fa-facebook text-2xl mb-1' }), 'Facebook'])
+                ])
+            ]),
+
+            // 2. เลือกเกม
+            React.createElement('div', { className: 'card mb-6 p-6', key: 'step2' }, [
+                React.createElement('h3', { className: 'text-center text-[12px] font-bold text-white/60 mb-6 uppercase' }, '2. เลือกเกม'),
+                React.createElement('div', { className: 'game-grid' }, games.length === 0 ? 
+                    React.createElement('div', { className: 'text-center col-span-full text-white/40' }, 'กำลังโหลดข้อมูลเกม...') :
+                    games.map((game) => (
+                    React.createElement('div', {
+                        key: game.id,
+                        onClick: () => handleGameClick(game),
+                        className: `game-card flex flex-col items-center justify-center cursor-pointer hover:border-[#8b5cf6] transition-all duration-300`
+                    }, [
+                        React.createElement('img', { src: game.icon, className: 'w-16 h-16 rounded-2xl mb-2 object-cover border border-white/10' }),
+                        React.createElement('div', { className: 'text-[11px] font-bold text-white/80 text-center leading-tight' }, game.name)
+                    ])
+                )))
+            ]),
+
+            // 3. เลือกแพ็กเกจ (Empty Background State)
+            React.createElement('div', { className: 'card mb-6 p-6 min-h-[120px] flex items-center justify-center', key: 'step3' }, [
+                React.createElement('h3', { className: 'text-[12px] font-bold text-white/60 uppercase m-0' }, '3. เลือกแพ็กเกจ')
+            ]),
+
+            // 4. สรุป & กรอก UID (Empty Background State)
+            React.createElement('div', { className: 'card p-8 mb-10', key: 'step4' }, [
+                React.createElement('h3', { className: 'text-center text-[12px] font-bold text-white/60 mb-6 uppercase' }, '4. สรุป & กรอก UID'),
+                React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-8' }, [
+                    React.createElement('div', { className: 'space-y-4' }, [
+                        React.createElement('div', null, [
+                            React.createElement('label', { className: 'form-label text-[11px]' }, 'UID ลูกค้า'),
+                            React.createElement('input', { className: 'form-input bg-black/40', disabled: true, placeholder: 'กรอก UID ลูกค้า' })
+                        ]),
+                        React.createElement('div', null, [
+                            React.createElement('label', { className: 'form-label text-[11px]' }, 'ราคาขาย (บาท)'),
+                            React.createElement('input', { className: 'form-input bg-black/40', disabled: true })
+                        ])
+                    ]),
+                    React.createElement('div', { className: 'bg-black/20 border border-white/5 rounded-xl p-6 text-[12px]' }, [
+                        React.createElement('div', { className: 'text-white/60 font-bold mb-1' }, 'Supplier ถูกสุด (อัตโนมัติ)'),
+                        React.createElement('div', { className: 'text-white/40 mb-4' }, '-'),
+                        React.createElement('div', { className: 'flex items-center gap-2 mb-2' }, [React.createElement('span', { className: 'text-white/40' }, 'ต้นทุน:'), React.createElement('span', { className: 'text-[#f59e0b] font-bold' }, '-')]),
+                        React.createElement('div', { className: 'flex items-center gap-2' }, [React.createElement('span', { className: 'text-white/40' }, 'กำไร:'), React.createElement('span', { className: 'text-[#10b981] font-bold' }, '-')])
+                    ])
+                ]),
+                React.createElement('button', { className: 'btn btn-success w-full py-4 mt-8 text-lg font-bold opacity-80 cursor-not-allowed' }, 'Order 67')
+            ]),
+
+            // Popup Component
+            React.createElement(TopupPopup, {
+                key: 'popup',
+                isOpen: isPopupOpen,
+                onClose: () => setIsPopupOpen(false),
+                game: selectedGame,
+                packages: packages,
+                onOrder: async (data) => {
+                    // Save to database
+                    const session = Store.getSession();
+                    const orderData = await Store.addOrder({
+                        channel: channel,
+                        gameId: selectedGame.id,
+                        pkgId: data.selectedPkg.id,
+                        uid: data.uid,
+                        sellPrice: data.totalPrice, // User can override total price via profit
+                        cost: data.originalCost,
+                        createdBy: session ? session.name : 'System'
+                    });
+                    
+                    if (orderData) {
+                        if (typeof SFX !== 'undefined') SFX.play('success');
+                        setIsPopupOpen(false);
+                        window.location.href = './kanban.html';
+                    } else {
+                        alert('เกิดข้อผิดพลาดในการสร้างออเดอร์ กรุณาลองใหม่');
+                    }
+                }
+            })
+        ]);
+    };
 
     document.addEventListener('DOMContentLoaded', async () => {
-      await Store.init();
-      Store.requireAuth();
-      await loadComponent('headerSlot', '../components/header.html');
-      await loadComponent('sidebarSlot', '../components/sidebar.html');
-      renderGames();
-      Store.subscribe(renderGames);
+        await Store.init();
+        Store.requireAuth();
+        await loadComponent('headerSlot', '../components/header.html');
+        await loadComponent('sidebarSlot', '../components/sidebar.html');
+        
+        const root = ReactDOM.createRoot(document.getElementById('reactRoot'));
+        root.render(React.createElement(OrderApp));
     });
-
-    function pickChannel(ch) {
-      state.channel = ch;
-      document.getElementById('chLine').classList.toggle('active', ch === 'LINE');
-      document.getElementById('chFB').classList.toggle('active', ch === 'Facebook');
-    }
-
-    function renderGames() {
-      const games = Store.getGames();
-      const grid = document.getElementById('gameGrid');
-      grid.innerHTML = games.map(g => `
-        <div class="card game-card" data-gid="${encodeURIComponent(g.id)}">
-          <img src="${g.icon}" alt="${g.name}">
-          <div class="name thai">${g.name}</div>
-        </div>
-      `).join('');
-      grid.querySelectorAll('.game-card').forEach(card => {
-        card.addEventListener('click', function() {
-          const id = decodeURIComponent(this.dataset.gid);
-          pickGame(id, this);
-        });
-      });
-    }
-
-    function pickGame(id, el) {
-      state.gameId = id;
-      state.pkgId = '';
-      document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-
-      const pkgs = Store.getPackagesByGame(id);
-      const sec = document.getElementById('pkgSection');
-      sec.style.opacity = '1'; sec.style.pointerEvents = 'auto';
-
-      const pkgGrid = document.getElementById('pkgGrid');
-      pkgGrid.innerHTML = pkgs.length === 0
-        ? '<p class="thai" style="color:var(--text-muted);">ยังไม่มีแพ็กเกจ — เพิ่มได้ที่ Config</p>'
-        : pkgs.map(p => {
-          const best = Store.getCheapestSupplier(p);
-          return `
-            <div class="card pkg-card" data-pid="${encodeURIComponent(p.id)}">
-              <div class="pkg-name">${p.name}</div>
-              <div class="pkg-price">฿${p.sellPrice}</div>
-              <div class="pkg-cost thai">ทุน ฿${best ? best.cost : '?'}</div>
-            </div>`;
-        }).join('');
-
-      pkgGrid.querySelectorAll('.pkg-card').forEach(card => {
-        card.addEventListener('click', function() {
-          const pid = decodeURIComponent(this.dataset.pid);
-          pickPkg(pid, this);
-        });
-      });
-
-      // Reset summary
-      document.getElementById('summarySection').style.opacity = '.4';
-      document.getElementById('summarySection').style.pointerEvents = 'none';
-    }
-
-    function pickPkg(id, el) {
-      state.pkgId = id;
-      document.querySelectorAll('.pkg-card').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-
-      const pkg = Store.getPackages().find(p => p.id === id);
-      const best = Store.getCheapestSupplier(pkg);
-
-      document.getElementById('inputSellPrice').value = '฿' + pkg.sellPrice;
-      document.getElementById('supName').textContent = best ? best.name : '-';
-      document.getElementById('supCost').textContent = best ? '฿' + best.cost : '-';
-      document.getElementById('supProfit').textContent = best ? '฿' + (pkg.sellPrice - best.cost) : '-';
-
-      const sec = document.getElementById('summarySection');
-      sec.style.opacity = '1'; sec.style.pointerEvents = 'auto';
-    }
-
-    async function createOrder() {
-      const uid = document.getElementById('inputUID').value.trim();
-      if (!state.gameId) return alert('กรุณาเลือกเกม');
-      if (!state.pkgId) return alert('กรุณาเลือกแพ็กเกจ');
-      if (!uid) return alert('กรุณากรอก UID ลูกค้า');
-
-      const session = Store.getSession();
-      const game = Store.getGames().find(g => g.id === state.gameId);
-      const pkg = Store.getPackages().find(p => p.id === state.pkgId);
-      const best = Store.getCheapestSupplier(pkg);
-
-      await Store.addOrder({
-        channel: state.channel || '-',
-        gameId: state.gameId,
-        gameName: game.name,
-        pkgId: state.pkgId,
-        pkgName: pkg.name,
-        uid,
-        sellPrice: pkg.sellPrice,
-        cost: best ? best.cost : 0,
-        supplierName: best ? best.name : '-',
-        supplierLink: best ? best.link : '',
-        createdBy: session ? session.name : 'unknown'
-      });
-
-      SFX.play('success');
-      // Redirect to Kanban INSTANTLY
-      window.location.href = './kanban.html';
-    }
   </script>
 </body>
 </html>
