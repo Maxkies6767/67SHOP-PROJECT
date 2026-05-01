@@ -120,7 +120,8 @@
                                 onClick: () => handleGameClick(game),
                                 className: `flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:scale-105`
                             }, [
-                                React.createElement('img', { src: game.icon, className: 'w-full max-w-[120px] aspect-square rounded-2xl object-cover border border-white/10 shadow-sm' })
+                                React.createElement('img', { src: game.icon, className: 'w-full max-w-[120px] aspect-square rounded-2xl object-cover border border-white/10 shadow-sm mb-2' }),
+                                React.createElement('div', { className: 'text-[13px] font-bold text-white/80 text-center leading-tight' }, game.name)
                             ])
                         )))
                     ]),
