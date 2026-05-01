@@ -24,12 +24,42 @@
       <span id="headerUserName">-</span>
       <span class="role-tag" id="headerUserRole">-</span>
     </div>
+    <button class="btn-switch thai" onclick="window.switchAccount.open()">
+      <i class="fas fa-users"></i> สลับบัญชี
+    </button>
     <button class="btn-logout thai" onclick="Store.clearSession(); window.location.href='../index.html';">ออกจากระบบ</button>
     <button class="mobile-toggle" id="mobileToggle">
       <i class="fas fa-bars"></i>
     </button>
   </div>
 </header>
+
+<!-- Account Switch Modal -->
+<div class="switch-overlay" id="switchOverlay">
+  <div class="switch-modal">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+      <h2 class="thai" style="font-size:1.5rem; font-weight:900; background:linear-gradient(135deg,#fff,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">สลับบัญชีแอดมิน</h2>
+      <button onclick="window.switchAccount.close()" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:1.2rem;"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="account-list" id="accountList">
+      <!-- Accounts will be injected here -->
+    </div>
+
+    <div id="addAccountArea" style="display:none; margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid rgba(255,255,255,0.06);">
+      <div class="thai" style="font-size:.85rem; color:var(--text-muted); margin-bottom:.5rem;">ป้อนรหัสผ่านเพื่อเพิ่มบัญชีใหม่</div>
+      <div style="display:flex; gap:0.6rem;">
+        <input type="password" id="newAccPassword" placeholder="••••" style="flex:1; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:.8rem 1rem; color:#fff; outline:none;">
+        <button onclick="window.switchAccount.add()" style="background:var(--primary); color:#fff; border:none; border-radius:12px; padding:0 1.2rem; font-weight:700; cursor:pointer;">ยืนยัน</button>
+      </div>
+      <div id="switchError" class="thai" style="color:#ff6b6b; font-size:.8rem; margin-top:.5rem; text-align:center;"></div>
+    </div>
+
+    <button class="btn-add-acc thai" id="btnAddToggle" onclick="window.switchAccount.toggleAdd()">
+      <i class="fas fa-plus-circle"></i> เพิ่มบัญชีใหม่
+    </button>
+  </div>
+</div>
 
 <!-- Mobile Navigation Overlay -->
 <div class="mobile-nav-overlay" id="mobileNav">
@@ -47,13 +77,15 @@
     <a href="./stats.html" class="mobile-nav-link" id="m-nav-stats" style="display:none;"><i class="fas fa-chart-bar"></i> สถิติ</a>
     <a href="./config.html" class="mobile-nav-link" id="m-nav-config" style="display:none;"><i class="fas fa-cog"></i> ตั้งค่า</a>
   </div>
-  <div style="margin-top: auto; padding-top: 2rem;">
+  <div style="margin-top: auto; padding-top: 1rem; display:flex; flex-direction:column; gap:0.5rem;">
+    <button class="btn-switch thai w-full" onclick="window.switchAccount.open()">สลับบัญชี</button>
     <button class="btn-logout thai w-full" onclick="Store.clearSession(); window.location.href='../index.html';">ออกจากระบบ</button>
   </div>
 </div>
 
 <script>
   (function() {
+    // 1. Core Header Logic
     const s = JSON.parse(localStorage.getItem('shop67_session') || 'null');
     if (s) {
       document.getElementById('headerUserName').textContent = s.displayName || s.name;
@@ -68,7 +100,6 @@
         tag.style.boxShadow = 'inset 0 1px 1px rgba(255,255,255,0.4), 0 2px 10px rgba(245,158,11,0.4)';
         tag.style.textShadow = '0 1px 2px rgba(0,0,0,0.1)';
         
-        // Show owner links
         ['nav-stats', 'nav-config', 'm-nav-stats', 'm-nav-config'].forEach(id => {
           const el = document.getElementById(id);
           if(el) el.style.display = 'flex';
@@ -90,8 +121,90 @@
     const toggle = document.getElementById('mobileToggle');
     const close = document.getElementById('mobileClose');
     const nav = document.getElementById('mobileNav');
+    if(toggle) toggle.onclick = () => nav.classList.add('show');
+    if(close) close.onclick = () => nav.classList.remove('show');
 
-    toggle.onclick = () => nav.classList.add('show');
-    close.onclick = () => nav.classList.remove('show');
+    // 2. Account Switch Logic
+    window.switchAccount = {
+      open() {
+        this.renderList();
+        document.getElementById('switchOverlay').classList.add('show');
+        document.getElementById('addAccountArea').style.display = 'none';
+        document.getElementById('btnAddToggle').style.display = 'flex';
+      },
+      close() {
+        document.getElementById('switchOverlay').classList.remove('show');
+        if (nav) nav.classList.remove('show');
+      },
+      renderList() {
+        const list = document.getElementById('accountList');
+        const saved = JSON.parse(localStorage.getItem('shop67_saved_accounts') || '{}');
+        const current = Store.getSession();
+        
+        list.innerHTML = '';
+        Object.entries(saved).forEach(([name, data]) => {
+          const item = document.createElement('div');
+          item.className = 'account-item';
+          if (current && current.name === name) item.style.border = '1px solid var(--primary)';
+          
+          item.innerHTML = `
+            <img src="${data.avatarUrl || `https://ui-avatars.com/api/?name=${name}&background=6D5BFF&color=fff`}" alt="">
+            <div class="account-info">
+              <div class="account-name">${data.displayName || name}</div>
+              <div class="account-role">${data.role === 'owner' ? 'Owner' : 'Admin'}</div>
+            </div>
+            ${current && current.name === name ? '<i class="fas fa-check-circle" style="color:var(--primary)"></i>' : '<i class="fas fa-sync" style="color:var(--text-muted)"></i>'}
+          `;
+          item.onclick = () => this.switch(name);
+          list.appendChild(item);
+        });
+
+        if (Object.keys(saved).length === 0) {
+          list.innerHTML = '<div class="thai" style="text-align:center; padding:1rem; color:var(--text-dim);">ยังไม่มีบัญชีที่บันทึกไว้</div>';
+        }
+      },
+      toggleAdd() {
+        document.getElementById('addAccountArea').style.display = 'block';
+        document.getElementById('btnAddToggle').style.display = 'none';
+        document.getElementById('newAccPassword').focus();
+      },
+      async add() {
+        const pw = document.getElementById('newAccPassword').value;
+        const error = document.getElementById('switchError');
+        error.textContent = '⏳ กำลังตรวจสอบ...';
+        
+        try {
+          const users = Store.getUsers();
+          const user = users.find(u => u.password === pw);
+          
+          if (user) {
+            const saved = JSON.parse(localStorage.getItem('shop67_saved_accounts') || '{}');
+            saved[user.name] = { 
+              name: user.name, 
+              displayName: user.displayName, 
+              avatarUrl: user.avatarUrl,
+              role: user.role,
+              password: pw 
+            };
+            localStorage.setItem('shop67_saved_accounts', JSON.stringify(saved));
+            
+            Store.setSession(user);
+            window.location.reload();
+          } else {
+            error.textContent = '❌ รหัสผ่านไม่ถูกต้อง';
+          }
+        } catch (e) {
+          error.textContent = '❌ เกิดข้อผิดพลาด กรุณาลองใหม่';
+        }
+      },
+      switch(name) {
+        const saved = JSON.parse(localStorage.getItem('shop67_saved_accounts') || '{}');
+        const data = saved[name];
+        if (data) {
+          Store.setSession({ name: data.name, role: data.role, displayName: data.displayName, avatarUrl: data.avatarUrl });
+          window.location.reload();
+        }
+      }
+    };
   })();
 </script>
