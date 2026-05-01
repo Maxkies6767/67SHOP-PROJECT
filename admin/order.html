@@ -59,7 +59,7 @@
                     React.createElement('div', {
                         key: game.id,
                         onClick: () => handleGameClick(game),
-                        className: `game-card flex flex-col items-center justify-center cursor-pointer rounded-2xl border border-transparent hover:border-[#8b5cf6] transition-all duration-300 p-2`
+                        className: `flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:scale-105`
                     }, [
                         React.createElement('img', { src: game.icon, className: 'w-full max-w-[120px] aspect-square rounded-2xl object-cover border border-white/10 shadow-sm' })
                     ])
