@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Aggregator — 67SHOP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #8b5cf6; --bg-deep: #050408; }
+        body { font-family: 'Outfit', sans-serif; background-color: var(--bg-deep); color: #fff; margin: 0; }
+        .blob { position: fixed; width: 500px; height: 500px; border-radius: 50%; filter: blur(120px); z-index: -1; opacity: 0.3; }
+        .liquid-glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(40px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .liquid-card { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; transition: all 0.3s; }
+        .liquid-card:hover { transform: translateY(-4px); border-color: rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="blob" style="background: #6366f1; top: -10%; left: -10%;"></div>
+    <div class="blob" style="background: #a855f7; bottom: -10%; right: -10%;"></div>
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect } = React;
+
+        const DEFAULT_ICONS = {
+            'Mobile Legends': 'https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/d1/66/fc/d166fcf4-3184-9e25-da8a-7fe81eabe44f/AppIcon-0-0-1x_U007emarketing-0-7-0-85-220.png/512x512bb.jpg',
+            'ROV': 'https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/69/e2/3a/69e23a20-2794-f84e-f7d0-1eba1218531e/AppIcon-1x_U007emarketing-0-11-0-85-220-0.png/512x512bb.jpg',
+            'Free Fire': 'https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/06/7a/45/067a4562-101f-1fd2-29d3-838627a5f582/AppIcon-1774970234-0-0-1x_U007emarketing-0-8-0-85-220.png/512x512bb.jpg',
+            'All': 'https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/42/37/e1/4237e106-84b5-161a-8783-6f7c0d8dd74a/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg'
+        };
+
+        function ComparisonApp() {
+            const [search, setSearch] = useState('');
+            const [activeGame, setActiveGame] = useState('All');
+            const [data, setData] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [gameIcons, setGameIcons] = useState(DEFAULT_ICONS);
+            const [isEditingIcons, setIsEditingIcons] = useState(false);
+            const [isSaving, setIsSaving] = useState(false);
+            const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString());
+
+            useEffect(() => {
+                const fetchIcons = async () => {
+                    try {
+                        // เพิ่ม ?t= เพื่อป้องกัน Cache
+                        const res = await fetch('http://localhost:4000/api/config/icons?t=' + Date.now());
+                        const json = await res.json();
+                        if (Object.keys(json).length > 0) {
+                            setGameIcons(prev => ({ ...prev, ...json }));
+                        }
+                    } catch (err) { console.error('Failed to load icons', err); }
+                };
+
+                const fetchPrices = async () => {
+                    try {
+                        const res = await fetch('http://localhost:4000/api/prices');
+                        const json = await res.json();
+                        if (json.status === 'success') {
+                            setData(json.data || []);
+                            setLastUpdated(new Date().toLocaleTimeString());
+                        }
+                    } catch (err) {
+                        setError(err.message);
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+
+                fetchIcons();
+                fetchPrices();
+                const interval = setInterval(fetchPrices, 60000);
+                return () => clearInterval(interval);
+            }, []);
+
+            const handleSaveIcons = async () => {
+                setIsSaving(true);
+                try {
+                    await fetch('http://localhost:4000/api/config/icons', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(gameIcons)
+                    });
+                    setIsEditingIcons(false);
+                } catch (err) {
+                    alert('Failed to save icons: ' + err.message);
+                } finally {
+                    setIsSaving(false);
+                }
+            };
+
+            const games = ['All', ...new Set(data.map(d => d.game))];
+            const filteredGroups = data.filter(g => 
+                (activeGame === 'All' || g.game === activeGame) &&
+                (g.title?.toLowerCase().includes(search.toLowerCase()) || g.id?.toLowerCase().includes(search.toLowerCase()))
+            );
+
+            const updateIcon = (game, url) => {
+                setGameIcons(prev => ({ ...prev, [game]: url }));
+            };
+
+            if (error) return React.createElement('div', {className: 'flex items-center justify-center h-screen text-white font-bold backdrop-blur-xl bg-purple-500/10'}, '⚠️ Connection Lost: ' + error);
+
+            return React.createElement('div', { className: 'relative min-h-screen bg-[#090712] text-white font-sans overflow-hidden' }, [
+                // iOS 26 Enhanced Liquid Background - PURPLE THEME
+                React.createElement('div', { key: 'b1', className: 'absolute -top-48 -left-48 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[140px] animate-[pulse_8s_infinite]' }),
+                React.createElement('div', { key: 'b2', className: 'absolute top-1/4 -right-64 w-[700px] h-[700px] bg-indigo-600/15 rounded-full blur-[160px] animate-[pulse_12s_infinite]' }),
+                React.createElement('div', { key: 'b3', className: 'absolute -bottom-64 left-1/4 w-[500px] h-[500px] bg-violet-600/15 rounded-full blur-[120px] animate-[pulse_10s_infinite]' }),
+                React.createElement('div', { key: 'b4', className: 'absolute top-3/4 left-1/2 w-96 h-96 bg-fuchsia-500/10 rounded-full blur-[100px] animate-[pulse_6s_infinite]' }),
+
+                React.createElement('div', { className: 'relative flex min-h-screen z-10 p-6' }, [
+                    // Sidebar (Floating Liquid Glass)
+                    React.createElement('aside', { key: 'side', className: 'w-72 mr-6 rounded-[3rem] bg-white/[0.03] border border-white/10 backdrop-blur-[60px] flex flex-col hidden lg:flex shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden' }, [
+                        React.createElement('div', { className: 'p-10 flex flex-col items-center gap-4 border-b border-white/5' }, [
+                            React.createElement('div', { className: 'w-16 h-16 bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-700 rounded-[1.8rem] flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.4)] relative group' }, [
+                                React.createElement('div', { className: 'absolute inset-0 bg-white/20 rounded-[1.8rem] blur-md opacity-0 group-hover:opacity-100 transition-opacity' }),
+                                React.createElement('span', { className: 'text-white font-black text-3xl italic relative' }, '67')
+                            ]),
+                            React.createElement('div', { className: 'text-center' }, [
+                                React.createElement('h1', { className: 'text-xl font-black tracking-tight leading-none text-white' }, 'SHOP ADMIN'),
+                                React.createElement('div', { className: 'mt-2 px-3 py-1 bg-purple-400/10 border border-purple-400/20 rounded-full' }, 
+                                    React.createElement('span', { className: 'text-[9px] text-purple-400 font-black uppercase tracking-[0.3em]' }, 'Purple Liquid 26')
+                                )
+                            ])
+                        ]),
+                        React.createElement('nav', { className: 'flex-1 px-4 py-8 space-y-3 overflow-y-auto' }, [
+                            React.createElement('div', { className: 'px-6 mb-6 flex justify-between items-center' }, [
+                                React.createElement('span', { className: 'text-[10px] font-black text-white/30 uppercase tracking-[0.2em]' }, 'Market Domain'),
+                                React.createElement('button', { 
+                                    onClick: isEditingIcons ? handleSaveIcons : () => setIsEditingIcons(true),
+                                    className: `w-8 h-8 rounded-full border flex items-center justify-center transition-all shadow-lg ${isEditingIcons ? 'bg-emerald-500 border-emerald-400 text-black animate-pulse' : 'bg-white/5 border-white/10 hover:bg-purple-500 hover:text-white'}` 
+                                }, React.createElement('i', { className: `fas ${isSaving ? 'fa-spinner fa-spin' : (isEditingIcons ? 'fa-save' : 'fa-pen')} text-[10px]` }))
+                            ]),
+                            ...games.map(g => React.createElement('div', { key: g, className: 'space-y-2' }, [
+                                React.createElement('button', {
+                                    onClick: () => setActiveGame(g),
+                                    className: `w-full flex items-center gap-4 px-6 py-4 rounded-[2rem] transition-all duration-700 relative group ${activeGame === g ? 'bg-white/10 shadow-2xl border border-white/10' : 'hover:bg-white/5 text-white/40 hover:text-white'}`
+                                }, [
+                                    activeGame === g && React.createElement('div', { className: 'absolute left-2 w-1 h-6 bg-purple-400 rounded-full shadow-[0_0_15px_#a855f7]' }),
+                                    React.createElement('div', { className: 'w-8 h-8 rounded-xl overflow-hidden shadow-lg border border-white/10' }, 
+                                        React.createElement('img', { src: gameIcons[g] || gameIcons['All'], className: 'w-full h-full object-cover group-hover:scale-110 transition-transform duration-500' })
+                                    ),
+                                    React.createElement('span', { className: 'text-sm font-bold tracking-tight' }, g)
+                                ]),
+                                isEditingIcons && React.createElement('div', { className: 'px-4' }, [
+                                    React.createElement('input', {
+                                        className: 'w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[10px] outline-none focus:border-purple-500/50 text-white placeholder:text-white/10',
+                                        placeholder: 'Icon URL...',
+                                        value: gameIcons[g] || '',
+                                        onChange: e => updateIcon(g, e.target.value)
+                                    })
+                                ])
+                            ]))
+                        ])
+                    ]),
+
+                    // Main Viewport
+                    React.createElement('main', { key: 'main', className: 'flex-1 flex flex-col overflow-hidden' }, [
+                        // Glass Navbar
+                        React.createElement('header', { className: 'mb-6 p-5 px-10 rounded-[2.5rem] bg-white/[0.03] border border-white/10 backdrop-blur-[60px] flex items-center justify-between shadow-2xl relative overflow-hidden' }, [
+                            React.createElement('div', { className: 'absolute top-0 left-0 w-full h-full bg-gradient-to-r from-purple-500/5 to-transparent' }),
+                            React.createElement('div', { className: 'flex items-center gap-8 relative' }, [
+                                React.createElement('div', { className: 'flex items-center gap-4' }, [
+                                    React.createElement('div', { className: 'w-3 h-3 bg-purple-400 rounded-full animate-ping' }),
+                                    React.createElement('div', { className: 'w-3 h-3 bg-purple-500 rounded-full absolute blur-[6px]' }),
+                                    React.createElement('div', null, [
+                                        React.createElement('div', { className: 'text-[11px] font-black text-purple-400 uppercase tracking-[0.2em]' }, 'Active Intelligence'),
+                                        React.createElement('div', { className: 'text-[9px] text-white/40 font-bold' }, `Pulse Sync: ${lastUpdated}`)
+                                    ])
+                                ])
+                            ]),
+                            React.createElement('div', { className: 'relative w-96' }, [
+                                React.createElement('i', { className: 'fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-white/20' }),
+                                React.createElement('input', {
+                                    className: 'w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-14 pr-8 text-xs font-bold outline-none focus:bg-black/40 focus:border-purple-500/50 transition-all placeholder:text-white/10 text-white',
+                                    placeholder: 'Analyze market packages...',
+                                    value: search,
+                                    onChange: e => setSearch(e.target.value)
+                                })
+                            ])
+                        ]),
+
+                        // Dynamic Grid
+                        React.createElement('div', { className: 'flex-1 overflow-y-auto px-2 pb-12 space-y-12' }, [
+                            isLoading && data.length === 0 ? 
+                                React.createElement('div', { className: 'flex flex-col items-center justify-center h-96 gap-4' }, [
+                                    React.createElement('div', { className: 'animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full shadow-[0_0_20px_rgba(168,85,247,0.3)]' }),
+                                    React.createElement('span', { className: 'text-purple-400 font-black tracking-widest text-[10px]' }, 'DECODING PURPLE LIQUID...')
+                                ]) :
+                                [...new Set(filteredGroups.map(g => g.game))].map(gameName => {
+                                    const gameGroups = filteredGroups.filter(g => g.game === gameName);
+                                    return React.createElement('div', { key: gameName }, [
+                                        React.createElement('div', { className: 'flex items-center gap-6 mb-10 pl-4' }, [
+                                            React.createElement('div', { className: 'relative' }, [
+                                                React.createElement('div', { className: 'absolute inset-0 bg-purple-400/20 blur-xl rounded-full' }),
+                                                React.createElement('img', { src: gameIcons[gameName] || gameIcons['All'], className: 'w-16 h-16 rounded-[1.8rem] relative z-10 shadow-2xl border-2 border-white/10' })
+                                            ]),
+                                            React.createElement('div', null, [
+                                                React.createElement('h2', { className: 'text-3xl font-black tracking-tighter text-white uppercase italic' }, gameName),
+                                                React.createElement('div', { className: 'flex items-center gap-3 mt-1' }, [
+                                                    React.createElement('span', { className: 'text-[10px] font-black text-purple-400 tracking-[0.2em] uppercase' }, `${gameGroups.length} Packages`),
+                                                    React.createElement('div', { className: 'w-1 h-1 bg-white/20 rounded-full' }),
+                                                    React.createElement('span', { className: 'text-[10px] font-bold text-white/30 uppercase' }, 'Deep Purple Logic')
+                                                ])
+                                            ])
+                                        ]),
+
+                                        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10' }, 
+                                            gameGroups.map(group => {
+                                                const sorted = [...group.items].sort((a,b) => a.price - b.price);
+                                                const min = sorted[0]?.price || 0;
+
+                                                return React.createElement('div', { key: group.id, className: 'bg-white/[0.04] border border-white/10 backdrop-blur-[60px] rounded-[3rem] p-8 shadow-2xl hover:bg-white/[0.07] transition-all duration-700 group relative overflow-hidden border-t-white/20' }, [
+                                                    React.createElement('div', { className: 'absolute -top-12 -right-12 w-32 h-32 bg-purple-400/5 rounded-full blur-2xl group-hover:bg-purple-400/10 transition-colors' }),
+                                                    React.createElement('div', { className: 'mb-8 relative' }, [
+                                                        React.createElement('h3', { className: 'text-xl font-black text-white/90 group-hover:text-purple-400 transition-colors leading-tight' }, group.title || group.id),
+                                                        React.createElement('div', { className: 'flex items-center gap-2 mt-2' }, [
+                                                            React.createElement('div', { className: 'w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_#34d399]' }),
+                                                            React.createElement('span', { className: 'text-[10px] text-white/40 font-black tracking-wider' }, `${group.items.length} ACTIVE SUPPLIERS`)
+                                                        ])
+                                                    ]),
+                                                    React.createElement('div', { className: 'space-y-3' }, 
+                                                        sorted.map((item, idx) => {
+                                                            const isBest = idx === 0 && item.price > 0;
+                                                            return React.createElement('a', {
+                                                                key: idx, href: item.url, target: '_blank',
+                                                                className: `flex items-center justify-between p-5 rounded-[2.2rem] border transition-all ${isBest ? 'bg-purple-500/10 border-purple-500/40 shadow-[0_0_30px_rgba(168,85,247,0.2)]' : 'bg-black/40 border-white/5 hover:border-white/20'}`
+                                                            }, [
+                                                                React.createElement('div', { className: 'flex items-center gap-4' }, [
+                                                                    React.createElement('div', { className: `w-11 h-11 rounded-[1.2rem] flex items-center justify-center font-black text-sm shadow-inner ${isBest ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white' : 'bg-white/5 text-white/20'}` }, item.supplier[0]),
+                                                                    React.createElement('div', null, [
+                                                                        React.createElement('div', { className: 'text-sm font-black' }, item.supplier),
+                                                                        isBest && React.createElement('div', { className: 'text-[9px] text-emerald-400 font-black tracking-widest' }, 'BEST OFFER')
+                                                                    ])
+                                                                ]),
+                                                                React.createElement('div', { className: 'text-right' }, [
+                                                                    React.createElement('div', { className: `text-lg font-black ${isBest ? 'text-emerald-400' : 'text-white'}` }, '฿' + item.price),
+                                                                    !isBest && React.createElement('div', { className: 'text-[10px] text-white/20 font-bold' }, `+฿${(item.price - min).toFixed(2)}`)
+                                                                ])
+                                                            ]);
+                                                        })
+                                                    )
+                                                ]);
+                                            })
+                                        )
+                                    ]);
+                                })
+                        ])
+                    ])
+                ])
+            ]);
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(ComparisonApp));
+    </script>
+</body>
+</html>

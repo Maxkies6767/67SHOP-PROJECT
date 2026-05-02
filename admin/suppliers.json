@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Supplier 1",
+        "url": "https://example-shop-1.com/game",
+        "engine": "cheerio",
+        "selectors": {
+            "container": ".package-card",
+            "name": ".title",
+            "price": ".price-value"
+        }
+    },
+    {
+        "name": "Supplier 2",
+        "url": "https://example-shop-2.com/topup",
+        "engine": "puppeteer",
+        "selectors": {
+            "container": ".item",
+            "name": "h3",
+            "price": ".amount"
+        }
+    }
+]

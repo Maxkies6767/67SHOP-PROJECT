@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparison Engine Demo — 67SHOP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139, 92, 246, 0.4);
+            --neon-green: #10b981;
+            --neon-red: #ef4444;
+            --bg-deep: #08070b;
+            --bg-card: rgba(25, 22, 35, 0.6);
+        }
+        body { font-family: 'Outfit', 'Inter', sans-serif; background-color: var(--bg-deep); color: #eae8f4; overflow-x: hidden; margin: 0; }
+        .sidebar { background: rgba(13, 12, 18, 0.8); border-right: 1px solid rgba(139, 92, 246, 0.1); height: calc(100vh - 72px); position: sticky; top: 72px; }
+        .glass-card { background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid rgba(139, 92, 246, 0.15); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .glass-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .search-bar { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .search-bar:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+        
+        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="root"></div>
+
+    <script>
+        const { useState, useMemo, useEffect } = React;
+
+        const MOCK_SOURCES = [
+            { id: 1, name: '60 Diamonds', price: 35, supplier: 'Shop A', game: 'Free Fire', url: '#' },
+            { id: 2, name: '60 เพชร', price: 34, supplier: 'Shop B', game: 'Free Fire', url: '#' },
+            { id: 3, name: 'Free Fire 60D', price: 37, supplier: 'Shop C', game: 'Free Fire', url: '#' },
+            { id: 4, name: '625 Pts', price: 200, supplier: 'Shop A', game: 'Valorant', url: '#' },
+            { id: 5, name: '625 Points', price: 185, supplier: 'Shop D', game: 'Valorant', url: '#' },
+            { id: 6, name: '625 พอยท์', price: 215, supplier: 'Shop E', game: 'Valorant', url: '#' },
+            { id: 7, name: '500 VP', price: 150, supplier: 'Shop F', game: 'Valorant', url: '#' },
+            { id: 8, name: 'Valorant 500 Points', price: 153, supplier: 'Shop G', game: 'Valorant', url: '#' },
+            { id: 9, name: '60 Diamonds (Promo)', price: 31, supplier: 'Shop H', game: 'Free Fire', url: '#' },
+            { id: 10, name: '100 UC', price: 50, supplier: 'Shop A', game: 'PUBG', url: '#' },
+            { id: 11, name: 'PUBG 100UC', price: 55, supplier: 'Shop I', game: 'PUBG', url: '#' },
+        ];
+
+        const ComparisonApp = () => {
+            const [search, setSearch] = useState('');
+            const [activeGame, setActiveGame] = useState('All');
+            const [data, setData] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+            const [lastUpdated, setLastUpdated] = useState(null);
+            const [error, setError] = useState(null);
+
+            // --- THE BRIDGE: usePrices Logic ---
+            const fetchPrices = async () => {
+                setIsLoading(true);
+                try {
+                    // ในระบบจริง: const res = await fetch('/api/compare-prices');
+                    // จำลองการเรียก API
+                    await new Promise(r => setTimeout(r, 1500));
+                    setData(MOCK_SOURCES);
+                    setLastUpdated(new Date());
+                    setError(null);
+                } catch (err) {
+                    setError('ไม่สามารถเชื่อมต่อข้อมูลได้ กรุณาลองใหม่');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchPrices();
+                // Auto Refresh ทุก 10 นาที
+                const interval = setInterval(fetchPrices, 10 * 60 * 1000);
+                return () => clearInterval(interval);
+            }, []);
+
+            // Grouping Logic
+            const groups = useMemo(() => {
+                if (!data.length) return [];
+                const results = [];
+                data.forEach(item => {
+                    const numbers = item.name.match(/\d+/g);
+                    const key = `${item.game}-${numbers ? numbers[0] : 'item'}`;
+                    let g = results.find(x => x.key === key && Math.abs(x.avgPrice - item.price) <= 15);
+                    if (g) {
+                        g.items.push(item);
+                        g.avgPrice = g.items.reduce((a, b) => a + b.price, 0) / g.items.length;
+                    } else {
+                        results.push({ 
+                            key, game: item.game, 
+                            title: `${item.game} - ${numbers ? numbers[0] : ''} Units`,
+                            avgPrice: item.price, items: [item] 
+                        });
+                    }
+                });
+                return results;
+            }, [data]);
+
+            const games = ['All', ...new Set(MOCK_SOURCES.map(s => s.game))];
+            const filteredGroups = groups.filter(g => 
+                (activeGame === 'All' || g.game === activeGame) &&
+                g.title.toLowerCase().includes(search.toLowerCase())
+            );
+
+            const SkeletonCard = () => (
+                React.createElement('div', { className: 'glass-card p-8 rounded-[2rem] mb-8' }, [
+                    React.createElement('div', { className: 'w-64 h-8 skeleton rounded-xl mb-8' }),
+                    React.createElement('div', { className: 'space-y-4' }, [
+                        React.createElement('div', { className: 'w-full h-20 skeleton rounded-2xl' }),
+                        React.createElement('div', { className: 'w-full h-20 skeleton rounded-2xl' })
+                    ])
+                ])
+            );
+
+            return React.createElement('div', { className: 'flex flex-col min-h-screen' }, [
+                // Navbar
+                React.createElement('nav', { key: 'nav', className: 'h-[72px] sticky top-0 z-50 bg-black/80 backdrop-blur-2xl border-b border-white/5 px-6' }, 
+                    React.createElement('div', { className: 'max-w-7xl mx-auto h-full flex items-center justify-between gap-12' }, [
+                        React.createElement('div', { className: 'flex items-center gap-3 shrink-0' }, [
+                            React.createElement('div', { className: 'w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center font-black text-white italic shadow-lg shadow-purple-600/20' }, '67'),
+                            React.createElement('span', { className: 'text-xl font-black tracking-tighter text-white' }, 'SHOP AGGREGATOR')
+                        ]),
+                        React.createElement('div', { className: 'flex-1 max-w-2xl relative' }, [
+                            React.createElement('input', {
+                                type: 'text',
+                                placeholder: 'Search for games or packages...',
+                                className: 'search-bar w-full py-3.5 px-6 rounded-2xl outline-none transition-all text-white placeholder-white/20 text-sm font-medium',
+                                value: search,
+                                onChange: (e) => setSearch(e.target.value)
+                            }),
+                            React.createElement('div', { className: 'absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none' }, [
+                                React.createElement('span', { className: 'text-[10px] font-bold bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-white/30' }, 'Ctrl'),
+                                React.createElement('span', { className: 'text-[10px] font-bold bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-white/30' }, 'K')
+                            ])
+                        ]),
+                        React.createElement('div', { className: 'hidden lg:flex flex-col items-end shrink-0' }, [
+                            React.createElement('div', { className: 'flex items-center gap-2' }, [
+                                React.createElement('div', { className: 'w-2 h-2 bg-emerald-500 rounded-full animate-pulse' }),
+                                React.createElement('span', { className: 'text-[10px] font-bold text-emerald-500 tracking-widest uppercase' }, 'Live Syncing')
+                            ]),
+                            lastUpdated && React.createElement('span', { className: 'text-[9px] text-gray-500 font-bold' }, 
+                                `UPDATED AT ${lastUpdated.toLocaleTimeString()}`
+                            )
+                        ])
+                    ])
+                ),
+
+                // Main Layout
+                React.createElement('div', { key: 'layout', className: 'flex flex-1 w-full' }, [
+                    // Sidebar
+                    React.createElement('aside', { className: 'hidden lg:block w-72 sidebar p-8' }, [
+                        React.createElement('h4', { className: 'text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-8' }, 'Platforms & Games'),
+                        React.createElement('div', { className: 'space-y-3' }, games.map(g => 
+                            React.createElement('button', {
+                                key: g,
+                                onClick: () => setActiveGame(g),
+                                className: `w-full text-left px-5 py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-between group ${activeGame === g ? 'bg-purple-600 text-white shadow-xl shadow-purple-600/20 translate-x-2' : 'text-gray-400 hover:text-white hover:bg-white/5'}`
+                            }, [
+                                g,
+                                React.createElement('i', { className: `fas fa-chevron-right text-[10px] transition-all ${activeGame === g ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}` })
+                            ])
+                        ))
+                    ]),
+
+                    // Content Area
+                    React.createElement('main', { className: 'flex-1 bg-gradient-to-br from-black to-[#0d0c12] p-6 md:p-10' }, [
+                        isLoading ? 
+                            [1,2,3].map(i => React.createElement(SkeletonCard, { key: i })) :
+                            filteredGroups.map(group => {
+                                const minPrice = Math.min(...group.items.map(i => i.price));
+                                const avgPrice = group.avgPrice;
+
+                                return React.createElement('div', { key: group.key, className: 'glass-card p-8 rounded-[2.5rem] mb-10' }, [
+                                    React.createElement('div', { className: 'flex items-center justify-between mb-8' }, [
+                                        React.createElement('h3', { className: 'text-2xl font-black text-white flex items-center gap-4' }, [
+                                            React.createElement('div', { className: 'w-1 h-8 bg-purple-600 rounded-full' }),
+                                            group.title
+                                        ]),
+                                        React.createElement('div', { className: 'text-xs font-bold text-gray-500' }, `${group.items.length} providers found`)
+                                    ]),
+                                    React.createElement('div', { className: 'grid gap-3' }, 
+                                        group.items.sort((a,b) => a.price - b.price).map(item => (
+                                            React.createElement('a', {
+                                                key: item.id,
+                                                href: item.url,
+                                                target: '_blank',
+                                                className: `flex items-center justify-between p-5 rounded-3xl border transition-all cursor-pointer group/row ${item.price === minPrice ? 'bg-emerald-500/[0.03] border-emerald-500/30 ring-1 ring-emerald-500/20 hover:bg-emerald-500/[0.08]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.08] hover:border-white/20'}`
+                                            }, [
+                                                React.createElement('div', { className: 'flex items-center gap-5' }, [
+                                                    React.createElement('div', { className: 'w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center font-black text-white border border-white/10 group-hover/row:border-purple-500/50 transition-colors' }, item.supplier[0]),
+                                                    React.createElement('div', null, [
+                                                        React.createElement('div', { className: 'flex items-center gap-3 mb-1' }, [
+                                                            React.createElement('span', { className: 'font-bold text-white group-hover/row:text-purple-400 transition-colors' }, item.supplier),
+                                                            item.price === minPrice && React.createElement('span', { className: 'text-[9px] bg-emerald-500 text-white px-2 py-0.5 rounded-md font-black tracking-tighter' }, 'คุ้มที่สุด')
+                                                        ]),
+                                                        React.createElement('div', { className: 'text-xs text-gray-500 font-medium' }, item.name)
+                                                    ])
+                                                ]),
+                                                React.createElement('div', { className: 'flex items-center gap-8' }, [
+                                                    React.createElement('div', { className: 'text-right' }, [
+                                                        React.createElement('div', { className: `text-2xl font-black tracking-tight transition-all ${item.price === minPrice ? 'text-emerald-400 group-hover/row:scale-110' : (item.price > avgPrice * 1.05 ? 'text-red-400' : 'text-white')}` }, `฿${item.price}`),
+                                                        React.createElement('div', { className: 'text-[10px] font-bold mt-0.5' }, 
+                                                            item.price === minPrice ? 
+                                                                React.createElement('span', { className: 'text-emerald-500/60 uppercase tracking-tighter' }, 'Best Value Ever') : 
+                                                                React.createElement('span', { className: 'text-gray-600' }, `+฿${item.price - minPrice} diff`)
+                                                        )
+                                                    ]),
+                                                    React.createElement('div', { className: 'text-white/20 group-hover/row:text-white/60 transition-all transform group-hover/row:translate-x-1' }, 
+                                                        React.createElement('i', { className: 'fas fa-arrow-right' })
+                                                    )
+                                                ])
+                                            ])
+                                        ))
+                                    )
+                                ]);
+                            })
+                    ])
+                ])
+            ]);
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(ComparisonApp));
+    </script>
+</body>
+</html>

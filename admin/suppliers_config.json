@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Shop A (Static)",
+        "url": "https://shop-a.com/ff-topup",
+        "engine": "cheerio",
+        "selectors": {
+            "container": ".product-item",
+            "name": ".product-name",
+            "price": ".product-price"
+        }
+    },
+    {
+        "name": "Shop B (Dynamic)",
+        "url": "https://shop-b.com/valorant",
+        "engine": "puppeteer",
+        "selectors": {
+            "container": ".v-card",
+            "name": "h2.title",
+            "price": "span.amount"
+        }
+    },
+    {
+        "name": "Shop C",
+        "url": "https://shop-c.com/pubg",
+        "engine": "cheerio",
+        "selectors": {
+            "container": ".item",
+            "name": ".title",
+            "price": ".price"
+        }
+    }
+]
